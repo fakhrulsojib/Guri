@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 from main import app
 
-SINGLE_LOG_API_ENDPOINT = "/api/v1/log/"
+SINGLE_LOG_API_ENDPOINT = "/api/v1/logs"
 
 valid_log_data = {
     "provider": "test-service",
@@ -60,7 +60,7 @@ def test_log_rejects_get_method(mock_producer):
 
 @patch("routers.log_router.producer")
 def test_log_wrong_path(mock_producer):
-    response = client.post("/api/v1/logs/", json=valid_log_data)
+    response = client.post("/api/v1/log/", json=valid_log_data)
     assert response.status_code == 404
 
 @patch("routers.log_router.producer")

@@ -6,7 +6,7 @@ from confluent_kafka import Producer, KafkaError
 from model.raw_log import RawLog
 
 log_router = APIRouter(
-    prefix="/api/v1/log",
+    prefix="/api/v1/logs",
     tags=["Log"],
 )
 
