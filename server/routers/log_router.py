@@ -31,20 +31,18 @@ async def add_single_log(log: RawLog):
         if len(message_bytes) > MAX_KAFKA_PAYLOAD:
             raise HTTPException(status_code=413, detail="Payload too large for Kafka")
 
-        print(len(message_bytes))
-
         producer.produce(
             KAFKA_TOPIC_RAW,
             key=None,
             value=message_bytes,
             callback=delivery_report
         )
-
         producer.flush()
 
         return {"status": "success", "message": "Log published to Kafka"}
     except Exception as e:
         if isinstance(e, HTTPException):
             raise
+        
         print(f"[HERELOG_ROUTER][ERROR] Error adding log: {e}")
         raise HTTPException(status_code=500, detail=str(e))

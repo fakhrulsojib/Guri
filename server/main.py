@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from routers.health_router import health_router
 from routers.log_router import log_router
 from consumers.raw_log_to_db_consumer import (
-    start_raw_log_to_db_consumer, 
+    start_raw_log_to_db_consumer,
     stop_raw_log_to_db_consumer
 )
 
@@ -12,9 +12,7 @@ from consumers.raw_log_to_db_consumer import (
 async def lifespan(app: FastAPI):
     consumer_thread = Thread(target=start_raw_log_to_db_consumer, daemon=True)
     consumer_thread.start()
-    
     yield
-    
     stop_raw_log_to_db_consumer()
     consumer_thread.join(timeout=5.0)
 
