@@ -52,7 +52,7 @@ class RawLogToDBConsumer:
                     log_data = json.loads(msg.value().decode('utf-8'))
                     log = RawLog(**log_data)
                     execute_query(INSERT_LOG_SQL, (log.provider, log.data, log.timestamp))
-                    print(f"Saved log: {log.dict()}")
+                    print(f"Saved log: {log.model_dump()}")
                 except Exception as e:
                     print(f"Failed to save log: {e}")
                 time.sleep(0.1)
