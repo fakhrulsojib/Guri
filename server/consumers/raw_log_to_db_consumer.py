@@ -1,7 +1,6 @@
 import os
 import json
 import time
-import threading
 from confluent_kafka import Consumer
 from database.db import execute_query
 from model.raw_log import RawLog

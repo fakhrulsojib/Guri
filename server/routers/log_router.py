@@ -1,8 +1,6 @@
-from fastapi import APIRouter, HTTPException, Request, Response, status
-import datetime
+from fastapi import APIRouter, HTTPException
 import os
-import json
-from confluent_kafka import Producer, KafkaError
+from confluent_kafka import Producer
 from model.raw_log import RawLog
 
 log_router = APIRouter(
