@@ -1,3 +1,7 @@
+# Pulse AI
+
+A smart log analytics platform built with FastAPI, Kafka, and AI-powered insights.
+
 ## Prerequirements
 1. Latest Docker and Docker Compose.
 2. Executable permissions for `run.sh`.

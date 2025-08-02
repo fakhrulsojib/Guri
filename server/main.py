@@ -17,8 +17,8 @@ async def lifespan(app: FastAPI):
     consumer_thread.join(timeout=5.0)
 
 app = FastAPI(
-    title="Guri",
-    description="Smart Log",
+    title="Pulse AI",
+    description="Smart Log Analytics Platform",
     version="0.0.0",
     lifespan=lifespan
 )
