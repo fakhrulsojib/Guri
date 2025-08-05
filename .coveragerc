@@ -1,0 +1,33 @@
+# type: ignore
+[run]
+source = server
+omit = 
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */migrations/*
+    */venv/*
+    */env/*
+    setup.py
+    conftest.py
+    */site-packages/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+    except ImportError:
+    except ImportError,:
+    except ImportError as:
+    if TYPE_CHECKING:
+    from __future__ import
+    from typing import
+    from typing_extensions import 
