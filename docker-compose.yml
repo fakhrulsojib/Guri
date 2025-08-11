@@ -9,6 +9,7 @@ services:
                 volumes:
                         - ./server:/app
                         - ./chroma_data:/app/chroma_data
+                        - ./logs/backend:/app/logs/backend
                 command: >
                         uvicorn main:app
                         --host 0.0.0.0
@@ -22,6 +23,16 @@ services:
                         - chroma
                 networks:
                         - app_network
+                logging:
+                        driver: "json-file"
+                        options:
+                                max-size: "10m"
+                                max-file: "3"
+                environment:
+                        - LOG_LEVEL=INFO
+                        - LOG_FORMAT=json
+                        - LOG_DIR=/app/logs/backend
+                        - LOG_RETENTION_DAYS=30
 
         zookeeper:
                 image: confluentinc/cp-zookeeper:7.5.3

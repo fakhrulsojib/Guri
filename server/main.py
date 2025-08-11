@@ -9,17 +9,33 @@ from consumers.raw_log_to_db_consumer import (
     stop_raw_log_to_db_consumer
 )
 from database.database import check_database_connection
+from util.logging_config import setup_logging
+from middleware.logging_middleware import LoggingMiddleware
+import structlog
+import os
+
+logger = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    log_level = os.environ.get("LOG_LEVEL", "INFO")
+    log_format = os.environ.get("LOG_FORMAT", "json")
+    log_dir = os.environ.get("LOG_DIR", "logs/backend")
+    
+    setup_logging(log_level, log_format, log_dir)
+    
+    logger.info("Starting application", app_name="Pulse AI")
+    
     if not check_database_connection():
-        print("Warning: Database connection failed")
+        logger.error("Database connection failed")
     
     consumer_thread = Thread(target=start_raw_log_to_db_consumer, daemon=True)
     consumer_thread.start()
+    logger.info("Started consumer thread")
     
     yield
     
+    logger.info("Shutting down application")
     stop_raw_log_to_db_consumer()
     consumer_thread.join(timeout=5.0)
 
@@ -29,6 +45,8 @@ app = FastAPI(
     version="0.0.0",
     lifespan=lifespan
 )
+
+app.add_middleware(LoggingMiddleware)
 
 app.include_router(health_router)
 app.include_router(log_router)

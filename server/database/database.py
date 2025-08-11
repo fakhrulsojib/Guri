@@ -3,6 +3,9 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+import structlog
+
+logger = structlog.get_logger()
 
 PG_HOST = os.environ.get("POSTGRES_HOST", "db")
 PG_DB = os.environ.get("POSTGRES_DB", "postgres")
@@ -18,24 +21,22 @@ def get_connection():
     )
 
 def execute_query(query: str, params: Optional[tuple] = None) -> None:
-    print(f"[DB] Executing query: {query}")
-    if params:
-        print(f"[DB] With params: {params}")
+    logger.debug("Executing database query", query=query, params=params)
     
     conn = get_connection()
     cur = conn.cursor()
     try:
         if params is not None:
             if query.count('%s') != len(params):
-                print(f"[DB][ERROR] Parameter count mismatch: {len(params)} params for {query.count('%s')} placeholders")
+                logger.error("Parameter count mismatch", param_count=len(params), placeholder_count=query.count('%s'))
                 raise ValueError(f"Parameter count ({len(params)}) does not match placeholders ({query.count('%s')})")
             cur.execute(query, params)
         else:
             cur.execute(query)
         conn.commit()
-        print(f"[DB] Query executed successfully.")
+        logger.debug("Database query executed successfully")
     except Exception as e:
-        print(f"[DB][ERROR] Error executing query: {query} with params: {params} - {e}")
+        logger.error("Database query execution failed", query=query, params=params, error=str(e))
         conn.rollback()
         raise
     finally:
@@ -43,16 +44,14 @@ def execute_query(query: str, params: Optional[tuple] = None) -> None:
         conn.close()
 
 def execute_query_with_result(query: str, params: Optional[tuple] = None) -> List[Dict[str, Any]]:
-    print(f"[DB] Executing query: {query}")
-    if params:
-        print(f"[DB] With params: {params}")
+    logger.debug("Executing database query with result", query=query, params=params)
     
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
         if params is not None:
             if query.count('%s') != len(params):
-                print(f"[DB][ERROR] Parameter count mismatch: {len(params)} params for {query.count('%s')} placeholders")
+                logger.error("Parameter count mismatch", param_count=len(params), placeholder_count=query.count('%s'))
                 raise ValueError(f"Parameter count ({len(params)}) does not match placeholders ({query.count('%s')})")
             cur.execute(query, params)
         else:
@@ -61,10 +60,10 @@ def execute_query_with_result(query: str, params: Optional[tuple] = None) -> Lis
         conn.commit()
         
         results = cur.fetchall()
-        print(f"[DB] Query executed successfully. Found {len(results)} results.")
+        logger.debug("Database query executed successfully", result_count=len(results))
         return [dict(row) for row in results]
     except Exception as e:
-        print(f"[DB][ERROR] Error executing query: {query} with params: {params} - {e}")
+        logger.error("Database query execution failed", query=query, params=params, error=str(e))
         conn.rollback()
         raise
     finally:
@@ -84,5 +83,5 @@ def check_database_connection() -> bool:
         conn.close()
         return True
     except Exception as e:
-        print(f"Database connection failed: {e}")
+        logger.error("Database connection failed", error=str(e))
         return False 

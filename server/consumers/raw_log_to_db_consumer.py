@@ -5,6 +5,9 @@ import threading
 from confluent_kafka import Consumer
 from database.database import execute_query
 from model.raw_log import RawLog
+import structlog
+
+logger = structlog.get_logger()
 
 KAFKA_BROKER = os.environ.get("KAFKA_BROKER", "kafka:9093")
 KAFKA_TOPIC_RAW = os.environ.get("KAFKA_TOPIC_RAW", "raw_logs")
@@ -19,18 +22,18 @@ class RawLogToDBConsumer:
 
     def start(self):
         if self._running:
-            print("Consumer already running.")
+            logger.warning("Consumer already running")
             return
         self._running = True
         self._thread = threading.Thread(target=self._consume_loop, daemon=True)
         self._thread.start()
-        print("RawLogToDBConsumer started.")
+        logger.info("RawLogToDBConsumer started")
 
     def stop(self):
         self._running = False
         if self._thread:
             self._thread.join()
-        print("RawLogToDBConsumer stopped.")
+        logger.info("RawLogToDBConsumer stopped")
 
     def _consume_loop(self):
         consumer = Consumer({
@@ -39,7 +42,7 @@ class RawLogToDBConsumer:
             'auto.offset.reset': 'earliest',
         })
         consumer.subscribe([KAFKA_TOPIC_RAW])
-        print(f"Listening to Kafka topic: {KAFKA_TOPIC_RAW}")
+        logger.info("Listening to Kafka topic", topic=KAFKA_TOPIC_RAW)
         
         try:
             while self._running:
@@ -47,16 +50,16 @@ class RawLogToDBConsumer:
                 if msg is None:
                     continue
                 if msg.error():
-                    print(f"Kafka error: {msg.error()}")
+                    logger.error("Kafka error", error=str(msg.error()))
                     continue
                 
                 try:
                     log_data = json.loads(msg.value().decode('utf-8'))
                     log = RawLog(**log_data)
                     execute_query(INSERT_LOG_SQL, (log.provider, log.data, log.timestamp))
-                    print(f"Saved log: {log.model_dump()}")
+                    logger.info("Log saved to database", log_data=log.model_dump())
                 except Exception as e:
-                    print(f"Failed to save log: {e}")
+                    logger.error("Failed to save log to database", error=str(e))
                 
                 time.sleep(0.1)
         finally:

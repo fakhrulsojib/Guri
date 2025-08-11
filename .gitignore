@@ -13,3 +13,7 @@ chroma_data/
 .coverage.*
 htmlcov/
 coverage.xml
+
+# logs
+logs/
+*.log
