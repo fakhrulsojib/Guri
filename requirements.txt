@@ -15,6 +15,7 @@ confluent-kafka==2.3.0
 psycopg2-binary==2.9.9
 pytest==7.4.3  # TODO: Move to dev/test requirements in the future
 pytest-cov==6.2.1
+pytest-asyncio==0.21.1
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0

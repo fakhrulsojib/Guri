@@ -1,7 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 import os
+import json
 from confluent_kafka import Producer
 from model.raw_log import RawLog
+from model.log_sources import LogSourceStatus
+from services.log_source_service import LogSourceService
 import structlog
 
 logger = structlog.get_logger()
@@ -26,8 +29,26 @@ def delivery_report(err, msg):
 @log_router.post("/", summary="Add Logs", status_code=201)
 async def add_single_log(log: RawLog):
     try:
-        logger.info("Processing log entry", log_data=log.model_dump())
-        message_bytes = log.model_dump_json().encode('utf-8')
+        log_source = LogSourceService.get_log_source_by_api_key(log.api_key)
+        if not log_source:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid API key"
+            )
+        
+        if log_source.status != LogSourceStatus.ACTIVE:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Log source is not active"
+            )
+        
+        logger.info("Processing log entry", log_data=log.model_dump(), source_id=log_source.id)
+        
+        log_json = log.model_dump_json(exclude={'api_key'})
+        log_data = json.loads(log_json)
+        log_data['source_id'] = log_source.id
+        
+        message_bytes = json.dumps(log_data).encode('utf-8')
 
         if len(message_bytes) > MAX_KAFKA_PAYLOAD:
             raise HTTPException(status_code=413, detail="Payload too large for Kafka")
@@ -41,9 +62,8 @@ async def add_single_log(log: RawLog):
         producer.flush()
 
         return {"status": "success", "message": "Log published to Kafka"}
+    except HTTPException:
+        raise
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        
         logger.error("Error adding log to Kafka", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,9 +1,11 @@
 from fastapi import FastAPI
+from fastapi.security import HTTPBearer
 from contextlib import asynccontextmanager
 from threading import Thread
 from routers.health_router import health_router
 from routers.log_router import log_router
 from routers.auth_router import auth_router
+from routers.log_sources_router import router as log_sources_router
 from consumers.raw_log_to_db_consumer import (
     start_raw_log_to_db_consumer,
     stop_raw_log_to_db_consumer
@@ -15,6 +17,8 @@ import structlog
 import os
 
 logger = structlog.get_logger()
+
+security_scheme = HTTPBearer()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,7 +47,13 @@ app = FastAPI(
     title="Pulse AI",
     description="Smart Log Analytics Platform with Google OAuth Authentication",
     version="0.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    openapi_tags=[
+        {"name": "Authentication", "description": "Google OAuth authentication endpoints"},
+        {"name": "log-sources", "description": "Log source management endpoints"},
+        {"name": "logs", "description": "Log management endpoints"},
+        {"name": "health", "description": "Health check endpoints"}
+    ]
 )
 
 app.add_middleware(LoggingMiddleware)
@@ -51,3 +61,4 @@ app.add_middleware(LoggingMiddleware)
 app.include_router(health_router)
 app.include_router(log_router)
 app.include_router(auth_router)
+app.include_router(log_sources_router)

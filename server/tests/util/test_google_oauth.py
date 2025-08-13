@@ -6,6 +6,46 @@ import httpx
 
 from util.google_oauth import GoogleOAuthUtils, GoogleOAuthConfig
 
+@pytest.fixture
+def mock_google_token_data():
+    """Test data for Google token verification"""
+    return {
+        'aud': 'test_client_id',
+        'sub': 'google123',
+        'email': 'test@example.com',
+        'email_verified': True,
+        'name': 'Test User',
+        'given_name': 'Test',
+        'family_name': 'User',
+        'picture': 'https://example.com/photo.jpg',
+        'locale': 'en',
+        'hd': 'example.com',
+        'exp': 9999999999
+    }
+
+@pytest.fixture
+def mock_google_user_info():
+    """Test data for Google user information"""
+    return {
+        'id': 'google123',
+        'email': 'test@example.com',
+        'verified_email': True,
+        'name': 'Test User',
+        'given_name': 'Test',
+        'family_name': 'User',
+        'picture': 'https://example.com/photo.jpg',
+        'locale': 'en',
+        'hd': 'example.com'
+    }
+
+@pytest.fixture
+def mock_token_exchange_response():
+    """Test data for token exchange response"""
+    return {
+        'access_token': 'fake_access_token',
+        'refresh_token': 'fake_refresh_token'
+    }
+
 class TestGoogleOAuthConfig:
     def test_config_loading(self):
         assert hasattr(GoogleOAuthConfig, 'CLIENT_ID')
@@ -17,44 +57,29 @@ class TestGoogleOAuthConfig:
 class TestGoogleOAuthUtils:
     @patch('util.google_oauth.id_token.verify_oauth2_token')
     @patch('util.google_oauth.requests.Request')
-    async def test_verify_google_token_success(self, mock_request, mock_verify_token):
-        mock_verify_token.return_value = {
-            'aud': 'test_client_id',
-            'sub': 'google123',
-            'email': 'test@example.com',
-            'email_verified': True,
-            'name': 'Test User',
-            'given_name': 'Test',
-            'family_name': 'User',
-            'picture': 'https://example.com/photo.jpg',
-            'locale': 'en',
-            'hd': 'example.com',
-            'exp': 9999999999
-        }
+    async def test_verify_google_token_success(self, mock_request, mock_verify_token, mock_google_token_data):
+        mock_verify_token.return_value = mock_google_token_data
         mock_request.return_value.time = 1000000000
 
         with patch.object(GoogleOAuthConfig, 'CLIENT_ID', 'test_client_id'):
             result = await GoogleOAuthUtils.verify_google_token('fake_id_token')
 
-        assert result['user_id'] == 'google123'
-        assert result['email'] == 'test@example.com'
-        assert result['email_verified'] is True
-        assert result['name'] == 'Test User'
-        assert result['given_name'] == 'Test'
-        assert result['family_name'] == 'User'
-        assert result['picture'] == 'https://example.com/photo.jpg'
-        assert result['locale'] == 'en'
-        assert result['hd'] == 'example.com'
+        assert result['user_id'] == mock_google_token_data['sub']
+        assert result['email'] == mock_google_token_data['email']
+        assert result['email_verified'] == mock_google_token_data['email_verified']
+        assert result['name'] == mock_google_token_data['name']
+        assert result['given_name'] == mock_google_token_data['given_name']
+        assert result['family_name'] == mock_google_token_data['family_name']
+        assert result['picture'] == mock_google_token_data['picture']
+        assert result['locale'] == mock_google_token_data['locale']
+        assert result['hd'] == mock_google_token_data['hd']
 
     @patch('util.google_oauth.id_token.verify_oauth2_token')
     @patch('util.google_oauth.requests.Request')
-    async def test_verify_google_token_invalid_audience(self, mock_request, mock_verify_token):
-        mock_verify_token.return_value = {
-            'aud': 'wrong_client_id',
-            'sub': 'google123',
-            'email': 'test@example.com',
-            'exp': 9999999999
-        }
+    async def test_verify_google_token_invalid_audience(self, mock_request, mock_verify_token, mock_google_token_data):
+        token_data = mock_google_token_data.copy()
+        token_data['aud'] = 'wrong_client_id'
+        mock_verify_token.return_value = token_data
         mock_request.return_value.time = 1000000000
 
         with patch.object(GoogleOAuthConfig, 'CLIENT_ID', 'test_client_id'):
@@ -66,13 +91,10 @@ class TestGoogleOAuthUtils:
 
     @patch('util.google_oauth.id_token.verify_oauth2_token')
     @patch('util.google_oauth.requests.Request')
-    async def test_verify_google_token_expired(self, mock_request, mock_verify_token):
-        mock_verify_token.return_value = {
-            'aud': 'test_client_id',
-            'sub': 'google123',
-            'email': 'test@example.com',
-            'exp': 1000000000
-        }
+    async def test_verify_google_token_expired(self, mock_request, mock_verify_token, mock_google_token_data):
+        token_data = mock_google_token_data.copy()
+        token_data['exp'] = 1000000000
+        mock_verify_token.return_value = token_data
         mock_request.return_value.time = 9999999999
 
         with patch.object(GoogleOAuthConfig, 'CLIENT_ID', 'test_client_id'):
@@ -103,7 +125,7 @@ class TestGoogleOAuthUtils:
         assert "Token verification failed" in str(exc_info.value.detail)
 
     @patch('util.google_oauth.httpx.AsyncClient')
-    async def test_verify_access_token_success(self, mock_client):
+    async def test_verify_access_token_success(self, mock_client, mock_google_user_info):
         mock_response_token = MagicMock()
         mock_response_token.status_code = 200
         mock_response_token.json.return_value = {
@@ -113,17 +135,7 @@ class TestGoogleOAuthUtils:
 
         mock_response_user = MagicMock()
         mock_response_user.status_code = 200
-        mock_response_user.json.return_value = {
-            'id': 'google123',
-            'email': 'test@example.com',
-            'verified_email': True,
-            'name': 'Test User',
-            'given_name': 'Test',
-            'family_name': 'User',
-            'picture': 'https://example.com/photo.jpg',
-            'locale': 'en',
-            'hd': 'example.com'
-        }
+        mock_response_user.json.return_value = mock_google_user_info
 
         mock_client_instance = AsyncMock()
         mock_client_instance.__aenter__.return_value = mock_client_instance
@@ -134,15 +146,15 @@ class TestGoogleOAuthUtils:
         with patch.object(GoogleOAuthConfig, 'CLIENT_ID', 'test_client_id'):
             result = await GoogleOAuthUtils.verify_access_token('fake_access_token')
 
-        assert result['user_id'] == 'google123'
-        assert result['email'] == 'test@example.com'
-        assert result['email_verified'] is True
-        assert result['name'] == 'Test User'
-        assert result['given_name'] == 'Test'
-        assert result['family_name'] == 'User'
-        assert result['picture'] == 'https://example.com/photo.jpg'
-        assert result['locale'] == 'en'
-        assert result['hd'] == 'example.com'
+        assert result['user_id'] == mock_google_user_info['id']
+        assert result['email'] == mock_google_user_info['email']
+        assert result['email_verified'] == mock_google_user_info['verified_email']
+        assert result['name'] == mock_google_user_info['name']
+        assert result['given_name'] == mock_google_user_info['given_name']
+        assert result['family_name'] == mock_google_user_info['family_name']
+        assert result['picture'] == mock_google_user_info['picture']
+        assert result['locale'] == mock_google_user_info['locale']
+        assert result['hd'] == mock_google_user_info['hd']
 
     @patch('util.google_oauth.httpx.AsyncClient')
     async def test_verify_access_token_invalid_token_response(self, mock_client):
@@ -219,13 +231,10 @@ class TestGoogleOAuthUtils:
         assert "Failed to verify token" in str(exc_info.value.detail)
 
     @patch('util.google_oauth.httpx.AsyncClient')
-    async def test_exchange_code_for_tokens_success(self, mock_client):
+    async def test_exchange_code_for_tokens_success(self, mock_client, mock_google_user_info, mock_token_exchange_response):
         mock_response_token = MagicMock()
         mock_response_token.status_code = 200
-        mock_response_token.json.return_value = {
-            'access_token': 'fake_access_token',
-            'refresh_token': 'fake_refresh_token'
-        }
+        mock_response_token.json.return_value = mock_token_exchange_response
 
         mock_client_instance = AsyncMock()
         mock_client_instance.__aenter__.return_value = mock_client_instance
@@ -237,17 +246,17 @@ class TestGoogleOAuthUtils:
             with patch.object(GoogleOAuthConfig, 'CLIENT_SECRET', 'test_client_secret'):
                 with patch.object(GoogleOAuthUtils, 'verify_access_token') as mock_verify:
                     mock_verify.return_value = {
-                        'user_id': 'google123',
-                        'email': 'test@example.com',
-                        'name': 'Test User'
+                        'user_id': mock_google_user_info['id'],
+                        'email': mock_google_user_info['email'],
+                        'name': mock_google_user_info['name']
                     }
 
                     result = await GoogleOAuthUtils.exchange_code_for_tokens(
                         'fake_auth_code', 'http://localhost/callback'
                     )
 
-        assert result['access_token'] == 'fake_access_token'
-        assert result['refresh_token'] == 'fake_refresh_token'
+        assert result['access_token'] == mock_token_exchange_response['access_token']
+        assert result['refresh_token'] == mock_token_exchange_response['refresh_token']
         assert 'user_info' in result
 
     @patch('util.google_oauth.httpx.AsyncClient')
