@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --bg-primary: #eff6ff;
+    --bg-secondary: #eef2ff;
+    --bg-accent: #faf5ff;
+
+    --primary-400: #60a5fa;
+    --primary-500: #3b82f6;
+    --primary-600: #2563eb;
+
+    --secondary-400: #818cf8;
+    --secondary-500: #6366f1;
+    --secondary-600: #4f46e5;
+
+    --accent-400: #a78bfa;
+    --accent-500: #8b5cf6;
+    --accent-600: #7c3aed;
+    --accent-700: #6d28d9;
+
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-tertiary: #6b7280;
+
+    --card-bg: rgba(255, 255, 255, 0.7);
+    --card-border: rgba(255, 255, 255, 0.2);
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-accent: #1e1b4b;
+
+    --primary-400: #60a5fa;
+    --primary-500: #3b82f6;
+    --primary-600: #2563eb;
+
+    --secondary-400: #818cf8;
+    --secondary-500: #6366f1;
+    --secondary-600: #4f46e5;
+
+    --accent-400: #a78bfa;
+    --accent-500: #8b5cf6;
+    --accent-600: #7c3aed;
+    --accent-700: #6d28d9;
+
+    --text-primary: #f9fafb;
+    --text-secondary: #e5e7eb;
+    --text-tertiary: #d1d5db;
+
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --card-border: rgba(148, 163, 184, 0.2);
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+@layer components {
+    .card-hover {
+        @apply bg-card-bg backdrop-blur-sm rounded-xl p-6 border border-card-border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1;
+    }
+
+    .icon-container {
+        @apply w-6 h-6 rounded-lg flex items-center justify-center mb-4 mx-auto;
+    }
+}
+
+@layer utilities {
+    .bg-bg-primary {
+        background-color: var(--bg-primary);
+    }
+
+    .bg-bg-secondary {
+        background-color: var(--bg-secondary);
+    }
+
+    .bg-bg-accent {
+        background-color: var(--bg-accent);
+    }
+
+    .from-primary-400 {
+        --tw-gradient-from: var(--primary-400);
+    }
+
+    .to-primary-500 {
+        --tw-gradient-to: var(--primary-500);
+    }
+
+    .from-primary-500 {
+        --tw-gradient-from: var(--primary-500);
+    }
+
+    .to-primary-600 {
+        --tw-gradient-to: var(--primary-600);
+    }
+
+    .from-primary-600 {
+        --tw-gradient-from: var(--primary-600);
+    }
+
+    .from-secondary-400 {
+        --tw-gradient-from: var(--secondary-400);
+    }
+
+    .to-secondary-500 {
+        --tw-gradient-to: var(--secondary-500);
+    }
+
+    .from-secondary-500 {
+        --tw-gradient-from: var(--secondary-500);
+    }
+
+    .from-secondary-600 {
+        --tw-gradient-from: var(--secondary-600);
+    }
+
+    .from-accent-400 {
+        --tw-gradient-from: var(--accent-400);
+    }
+
+    .to-accent-500 {
+        --tw-gradient-to: var(--accent-500);
+    }
+
+    .from-accent-500 {
+        --tw-gradient-from: var(--accent-500);
+    }
+
+    .to-accent-600 {
+        --tw-gradient-to: var(--accent-600);
+    }
+
+    .from-accent-600 {
+        --tw-gradient-from: var(--accent-600);
+    }
+
+    .to-accent-700 {
+        --tw-gradient-to: var(--accent-700);
+    }
+
+    .text-text-primary {
+        color: var(--text-primary);
+    }
+
+    .text-text-secondary {
+        color: var(--text-secondary);
+    }
+
+    .text-text-tertiary {
+        color: var(--text-tertiary);
+    }
+
+    .bg-card-bg {
+        background-color: var(--card-bg);
+    }
+
+    .border-card-border {
+        border-color: var(--card-border);
+    }
+
+    .shadow-card {
+        box-shadow: var(--card-shadow);
+    }
+
+    .shadow-card-hover {
+        box-shadow: var(--card-shadow-hover);
+    }
+}

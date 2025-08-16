@@ -11,10 +11,7 @@ services:
                         - ./chroma_data:/app/chroma_data
                         - ./logs/backend:/app/logs/backend
                 command: >
-                        uvicorn main:app
-                        --host 0.0.0.0
-                        --port 8000
-                        --reload
+                        uvicorn main:app --host 0.0.0.0 --port 8000 --reload
                 env_file:
                         - .env
                 depends_on:
@@ -33,6 +30,23 @@ services:
                         - LOG_FORMAT=json
                         - LOG_DIR=/app/logs/backend
                         - LOG_RETENTION_DAYS=30
+
+        frontend:
+                image: node:18-alpine
+                container_name: vite_frontend
+                ports:
+                        - "3000:3000"
+                volumes:
+                        - ./frontend:/app
+                        - /app/node_modules
+                working_dir: /app
+                environment:
+                        - NODE_ENV=development
+                networks:
+                        - app_network
+                stdin_open: true
+                tty: true
+                command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
 
         zookeeper:
                 image: confluentinc/cp-zookeeper:7.5.3
@@ -118,6 +132,7 @@ volumes:
         kafka_data:
         postgres_data:
         chroma_volume:
+
 
 networks:
         app_network:

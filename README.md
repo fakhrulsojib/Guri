@@ -10,7 +10,7 @@ A smart log analytics platform built with FastAPI, Kafka, and AI-powered insight
 
 ### Basic Usage
 1. Configure your `.env` file with your own settings
-2. Run `bash run.sh` to start the server
+2. Run `bash run.sh` to start all services
 
 ## 🛠️ First Time Setup
 
@@ -34,7 +34,7 @@ nano .env
 ### 2. Start Services
 
 ```bash
-# Start all services (FastAPI, PostgreSQL, Kafka, ChromaDB)
+# Start all services (FastAPI, PostgreSQL, Kafka, ChromaDB, Frontend)
 bash run.sh
 ```
 
@@ -70,7 +70,35 @@ docker exec postgres_db psql -U postgres -d fastapi_db -c "\dt"
 ## 📋 What's Included
 
 - **FastAPI Backend** - RESTful API with Google OAuth authentication
+- **React TypeScript Frontend** - Modern web interface built with Vite
 - **PostgreSQL Database** - User management and log storage
 - **Apache Kafka** - Real-time log streaming and processing
 - **ChromaDB** - Vector database for AI-powered insights
 - **JWT Authentication** - Secure token-based authentication system
+
+## 🌐 Frontend Development
+
+The frontend is a React TypeScript application built with Vite that runs entirely through Docker.
+
+**Tech Stack:**
+- React 18
+- TypeScript
+- Vite
+- Minimal dependencies
+
+**Access:**
+- Development: http://localhost:3000
+- Hot reload enabled for development
+
+**Build for Production:**
+```bash
+docker compose exec frontend npm run build
+```
+
+## 🔧 Service Ports
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **Kafka UI**: http://localhost:8080
+- **PostgreSQL**: localhost:5432
+- **ChromaDB**: http://localhost:8001
