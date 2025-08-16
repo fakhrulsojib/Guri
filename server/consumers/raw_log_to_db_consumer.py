@@ -1,8 +1,9 @@
 import os
 import json
 import time
+import threading
 from confluent_kafka import Consumer
-from database.db import execute_query
+from database.database import execute_query
 from model.raw_log import RawLog
 
 KAFKA_BROKER = os.environ.get("KAFKA_BROKER", "kafka:9093")
@@ -39,6 +40,7 @@ class RawLogToDBConsumer:
         })
         consumer.subscribe([KAFKA_TOPIC_RAW])
         print(f"Listening to Kafka topic: {KAFKA_TOPIC_RAW}")
+        
         try:
             while self._running:
                 msg = consumer.poll(timeout=1.0)
@@ -47,6 +49,7 @@ class RawLogToDBConsumer:
                 if msg.error():
                     print(f"Kafka error: {msg.error()}")
                     continue
+                
                 try:
                     log_data = json.loads(msg.value().decode('utf-8'))
                     log = RawLog(**log_data)
@@ -54,6 +57,7 @@ class RawLogToDBConsumer:
                     print(f"Saved log: {log.model_dump()}")
                 except Exception as e:
                     print(f"Failed to save log: {e}")
+                
                 time.sleep(0.1)
         finally:
             consumer.close()

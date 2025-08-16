@@ -7,5 +7,4 @@ CREATE TABLE IF NOT EXISTS raw_logs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_raw_logs_timestamp ON raw_logs(timestamp);
-
 CREATE INDEX IF NOT EXISTS idx_raw_logs_provider ON raw_logs(provider);

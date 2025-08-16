@@ -14,3 +14,16 @@ uvicorn==0.33.0
 confluent-kafka==2.3.0
 psycopg2-binary==2.9.9
 pytest==7.4.3  # TODO: Move to dev/test requirements in the future
+pytest-cov==6.2.1
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+httpx==0.25.2
+google-auth==2.23.4
+google-auth-oauthlib==1.1.0
+google-auth-httplib2==0.1.1
+
+# Email validation for Pydantic
+email-validator==2.1.0

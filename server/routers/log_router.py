@@ -10,7 +10,7 @@ log_router = APIRouter(
 
 KAFKA_BROKER = os.environ.get("KAFKA_BROKER", "kafka:9093")
 KAFKA_TOPIC_RAW = os.environ.get("KAFKA_TOPIC_RAW", "raw_logs")
-MAX_KAFKA_PAYLOAD = 1000000  # ~1MB
+MAX_KAFKA_PAYLOAD = 1000000
 
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 
