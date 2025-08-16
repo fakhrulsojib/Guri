@@ -2,10 +2,75 @@
 
 A smart log analytics platform built with FastAPI, Kafka, and AI-powered insights.
 
-## Prerequirements
-1. Latest Docker and Docker Compose.
-2. Executable permissions for `run.sh`.
+## 🚀 Quick Start
 
-## Steps to run
-1. Rewrite `.env` file with your own settings.
-2. Hit `bash run.sh` to start the server.
+### Prerequisites
+- Latest Docker and Docker Compose
+- Executable permissions for `run.sh`
+
+### Basic Usage
+1. Configure your `.env` file with your own settings
+2. Run `bash run.sh` to start the server
+
+## 🛠️ First Time Setup
+
+### 1. Environment Configuration
+
+Create a `.env` file with your Google OAuth credentials:
+
+```bash
+# Copy example environment file
+cp example.env .env
+
+# Edit with your actual Google OAuth credentials
+nano .env
+```
+
+**Required Environment Variables:**
+- `GOOGLE_CLIENT_ID` - Your Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Your Google OAuth client secret  
+- `JWT_SECRET` - A secure random string for JWT signing
+
+### 2. Start Services
+
+```bash
+# Start all services (FastAPI, PostgreSQL, Kafka, ChromaDB)
+bash run.sh
+```
+
+### 3. Kafka Topic & Database Setup
+
+```bash
+# Create Kafka topic
+docker exec kafka kafka-topics --create --topic raw_logs \
+  --bootstrap-server kafka:9093 \
+  --partitions 1 \
+  --replication-factor 1
+
+# Create database tables
+docker exec -i postgres_db psql -U postgres -d fastapi_db < resources/database/ddl/users.sql
+docker exec -i postgres_db psql -U postgres -d fastapi_db < resources/database/ddl/refresh_tokens.sql
+docker exec -i postgres_db psql -U postgres -d fastapi_db < resources/database/ddl/log_sources.sql
+docker exec -i postgres_db psql -U postgres -d fastapi_db < resources/database/ddl/raw_logs.sql
+```
+
+### 4. Verify Setup
+
+```bash
+# Check services status
+docker compose ps
+
+# Verify Kafka topic
+docker exec kafka kafka-topics --list --bootstrap-server kafka:9093
+
+# Verify database tables
+docker exec postgres_db psql -U postgres -d fastapi_db -c "\dt"
+```
+
+## 📋 What's Included
+
+- **FastAPI Backend** - RESTful API with Google OAuth authentication
+- **PostgreSQL Database** - User management and log storage
+- **Apache Kafka** - Real-time log streaming and processing
+- **ChromaDB** - Vector database for AI-powered insights
+- **JWT Authentication** - Secure token-based authentication system
