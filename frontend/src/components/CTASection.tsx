@@ -1,5 +1,6 @@
 import React from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
 
 interface CTASectionProps {
   isDark: boolean
@@ -7,11 +8,11 @@ interface CTASectionProps {
 
 const CTASection: React.FC<CTASectionProps> = ({ isDark }) => {
   const { isAuthenticated, isLoading, handleLogin } = useAuth()
+  const navigate = useNavigate()
 
   const handleCTAClick = () => {
     if (isAuthenticated) {
-      // TODO: Navigate to dashboard when implemented
-      console.log('Navigate to dashboard')
+      navigate('/dashboard')
     } else {
       handleLogin()
     }

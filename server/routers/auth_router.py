@@ -82,23 +82,7 @@ async def google_oauth_callback(
         frontend_redirect = state if state else FRONTEND_URL
         
         if auth_response and auth_response.access_token:
-            response = RedirectResponse(url=f"{frontend_redirect}?auth=success")
-            response.set_cookie(
-                key="access_token",
-                value=auth_response.access_token,
-                httponly=True,
-                secure=False,  # Set to True in production with HTTPS
-                samesite="lax",
-                max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # Convert minutes to seconds
-            )
-            response.set_cookie(
-                key="refresh_token",
-                value=auth_response.refresh_token,
-                httponly=True,
-                secure=False,  # Set to True in production with HTTPS
-                samesite="lax",
-                max_age=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60  # Convert days to seconds
-            )
+            response = RedirectResponse(url=f"{frontend_redirect}?auth=success&access_token={auth_response.access_token}&refresh_token={auth_response.refresh_token}")
             return response
         else:
             return RedirectResponse(url=f"{frontend_redirect}?error=auth_failed")
@@ -123,29 +107,25 @@ async def refresh_token(refresh_request: RefreshTokenRequest):
 @auth_router.post("/logout")
 async def logout(request: Request):
     try:
-        # Get refresh token from cookies
-        refresh_token = request.cookies.get("refresh_token")
+        body = await request.json()
+        refresh_token = body.get("refresh_token")
+        
         if not refresh_token:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No refresh token found in cookies"
+                detail="Refresh token is required in request body"
             )
         
-        # Revoke the refresh token in the database
         result = AuthService.logout(refresh_token)
         
         response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
-        
-        # Clear cookies
-        response_obj.delete_cookie("access_token")
-        response_obj.delete_cookie("refresh_token")
         
         return response_obj
     
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Logout failed: {str(e)}"
+            detail="Logout failed: {str(e)}"
         )
 
 @auth_router.get("/me", response_model=UserResponse)

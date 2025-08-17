@@ -12,9 +12,18 @@ export const authService = {
   },
 
   getCurrentUser: async () => {
-    const response = await fetch(`${BACKEND_URL}/auth/me-cookies`, {
-      credentials: 'include'
+    const accessToken = localStorage.getItem('access_token')
+    if (!accessToken) {
+      throw new Error('No access token found')
+    }
+
+    const response = await fetch(`${BACKEND_URL}/auth/me`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
     })
+    
     if (!response.ok) {
       throw new Error('Failed to get user info')
     }
@@ -22,10 +31,19 @@ export const authService = {
   },
 
   logout: async () => {
+    const refreshToken = localStorage.getItem('refresh_token')
+    if (!refreshToken) {
+      return { message: 'No refresh token found' }
+    }
+
     const response = await fetch(`${BACKEND_URL}/auth/logout`, {
       method: 'POST',
-      credentials: 'include'
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ refresh_token: refreshToken })
     })
+    
     if (!response.ok) {
       throw new Error('Logout failed')
     }
