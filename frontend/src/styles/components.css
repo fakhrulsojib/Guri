@@ -1,0 +1,117 @@
+@layer components {
+    .app-container {
+        @apply min-h-screen transition-colors duration-300;
+    }
+
+    .app-container.light {
+        @apply bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-900;
+    }
+
+    .app-container.dark {
+        @apply bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white;
+    }
+
+    .background-decoration {
+        @apply absolute inset-0 overflow-hidden;
+    }
+
+    .background-blob {
+        @apply absolute w-80 h-80 rounded-full blur-3xl;
+    }
+
+    .background-blob.top-right.light {
+        @apply -top-40 -right-40 bg-gradient-to-br from-blue-400/20 to-purple-400/20;
+    }
+
+    .background-blob.top-right.dark {
+        @apply -top-40 -right-40 bg-gradient-to-br from-blue-600/20 to-purple-600/20;
+    }
+
+    .background-blob.bottom-left.light {
+        @apply -bottom-40 -left-40 bg-gradient-to-tr from-indigo-400/20 to-purple-400/20;
+    }
+
+    .background-blob.bottom-left.dark {
+        @apply -bottom-40 -left-40 bg-gradient-to-tr from-indigo-600/20 to-purple-600/20;
+    }
+
+    .main-content {
+        @apply relative z-10 flex items-center justify-center min-h-screen px-4;
+    }
+
+    .content-wrapper {
+        @apply text-center max-w-4xl mx-auto;
+    }
+
+    .hero-section {
+        @apply mb-12;
+    }
+
+    .logo-container {
+        @apply inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-6 shadow-lg;
+    }
+
+    .logo-icon {
+        @apply w-8 h-8 text-white;
+    }
+
+    .hero-title.light {
+        @apply text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-blue-600;
+    }
+
+    .hero-title.dark {
+        @apply text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-blue-400;
+    }
+
+    .hero-subtitle.light {
+        @apply text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium text-gray-600;
+    }
+
+    .hero-subtitle.dark {
+        @apply text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium text-gray-300;
+    }
+
+    .features-grid {
+        @apply grid md:grid-cols-3 gap-6 mb-12;
+    }
+
+    .feature-card.light {
+        @apply card-hover bg-white/70 backdrop-blur-sm;
+    }
+
+    .feature-card.dark {
+        @apply card-hover bg-gray-800/50 backdrop-blur-sm;
+    }
+
+    .feature-title.light {
+        @apply text-lg font-bold mb-3 tracking-wide text-gray-800;
+    }
+
+    .feature-title.dark {
+        @apply text-lg font-bold mb-3 tracking-wide text-white;
+    }
+
+    .feature-description.light {
+        @apply text-sm leading-relaxed text-gray-600;
+    }
+
+    .feature-description.dark {
+        @apply text-sm leading-relaxed text-gray-300;
+    }
+
+    .cta-section {
+        @apply space-y-6;
+    }
+
+    .cta-button {
+        @apply bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+    }
+
+    .tech-stack.light {
+        @apply text-sm font-medium tracking-wide text-gray-500;
+    }
+
+    .tech-stack.dark {
+        @apply text-sm font-medium tracking-wide text-gray-400;
+    }
+}
