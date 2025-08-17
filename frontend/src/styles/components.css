@@ -1,117 +1,101 @@
 @layer components {
-    .app-container {
-        @apply min-h-screen transition-colors duration-300;
-    }
+  .app-container {
+    @apply min-h-screen relative overflow-hidden;
+  }
 
-    .app-container.light {
-        @apply bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-900;
-    }
+  .app-container.dark {
+    @apply bg-gray-900 text-white;
+  }
 
-    .app-container.dark {
-        @apply bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white;
-    }
+  .app-container.light {
+    @apply bg-white text-gray-900;
+  }
 
-    .background-decoration {
-        @apply absolute inset-0 overflow-hidden;
-    }
+  .hero-section {
+    @apply text-center py-8 px-4;
+  }
 
-    .background-blob {
-        @apply absolute w-80 h-80 rounded-full blur-3xl;
-    }
+  .hero-title {
+    @apply text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+  }
 
-    .background-blob.top-right.light {
-        @apply -top-40 -right-40 bg-gradient-to-br from-blue-400/20 to-purple-400/20;
-    }
+  .hero-subtitle {
+    @apply text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto;
+  }
 
-    .background-blob.top-right.dark {
-        @apply -top-40 -right-40 bg-gradient-to-br from-blue-600/20 to-purple-600/20;
-    }
+  .features-section {
+    @apply py-2 px-4;
+  }
 
-    .background-blob.bottom-left.light {
-        @apply -bottom-40 -left-40 bg-gradient-to-tr from-indigo-400/20 to-purple-400/20;
-    }
+  .features-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto;
+  }
 
-    .background-blob.bottom-left.dark {
-        @apply -bottom-40 -left-40 bg-gradient-to-tr from-indigo-600/20 to-purple-600/20;
-    }
+  .feature-card {
+    @apply p-6 rounded-2xl shadow-lg transition-all duration-300 transform hover:-translate-y-2 text-center;
+  }
 
-    .main-content {
-        @apply relative z-10 flex items-center justify-center min-h-screen px-4;
-    }
+  .feature-card.light {
+    @apply bg-white border border-gray-200 hover:shadow-xl;
+  }
 
-    .content-wrapper {
-        @apply text-center max-w-4xl mx-auto;
-    }
+  .feature-card.dark {
+    @apply bg-gray-800 border border-gray-700 hover:shadow-xl;
+  }
 
-    .hero-section {
-        @apply mb-12;
-    }
+  .feature-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto;
+  }
 
-    .logo-container {
-        @apply inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-6 shadow-lg;
-    }
+  .feature-title {
+    @apply text-xl font-semibold mb-3;
+  }
 
-    .logo-icon {
-        @apply w-8 h-8 text-white;
-    }
+  .feature-title.light {
+    @apply text-gray-900;
+  }
 
-    .hero-title.light {
-        @apply text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-blue-600;
-    }
+  .feature-title.dark {
+    @apply text-white;
+  }
 
-    .hero-title.dark {
-        @apply text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-blue-400;
-    }
+  .feature-description {
+    @apply text-gray-600 dark:text-gray-300 leading-relaxed;
+  }
 
-    .hero-subtitle.light {
-        @apply text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium text-gray-600;
-    }
+  .cta-section {
+    @apply text-center py-6 px-4;
+  }
 
-    .hero-subtitle.dark {
-        @apply text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium text-gray-300;
-    }
+  .cta-button {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+  }
 
-    .features-grid {
-        @apply grid md:grid-cols-3 gap-6 mb-12;
-    }
+  .cta-button:disabled {
+    @apply opacity-50 cursor-not-allowed transform-none;
+  }
 
-    .feature-card.light {
-        @apply card-hover bg-white/70 backdrop-blur-sm;
-    }
+  .tech-stack.light {
+    @apply text-gray-500 mt-6;
+  }
 
-    .feature-card.dark {
-        @apply card-hover bg-gray-800/50 backdrop-blur-sm;
-    }
+  .tech-stack.dark {
+    @apply text-gray-400 mt-6;
+  }
 
-    .feature-title.light {
-        @apply text-lg font-bold mb-3 tracking-wide text-gray-800;
-    }
+  .background-decorations {
+    @apply fixed inset-0 pointer-events-none z-0;
+  }
 
-    .feature-title.dark {
-        @apply text-lg font-bold mb-3 tracking-wide text-white;
-    }
+  .blob {
+    @apply absolute rounded-full opacity-20 blur-3xl;
+  }
 
-    .feature-description.light {
-        @apply text-sm leading-relaxed text-gray-600;
-    }
+  .blob.light {
+    @apply bg-gradient-to-r from-blue-400 to-purple-400;
+  }
 
-    .feature-description.dark {
-        @apply text-sm leading-relaxed text-gray-300;
-    }
-
-    .cta-section {
-        @apply space-y-6;
-    }
-
-    .cta-button {
-        @apply bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
-    }
-
-    .tech-stack.light {
-        @apply text-sm font-medium tracking-wide text-gray-500;
-    }
-
-    .tech-stack.dark {
-        @apply text-sm font-medium tracking-wide text-gray-400;
-    }
+  .blob.dark {
+    @apply bg-gradient-to-r from-blue-600 to-purple-600;
+  }
 }

@@ -1,9 +1,12 @@
 import os
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import RedirectResponse
 
 from services.auth_service import AuthService, get_current_active_user
 
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
 from model.user import (
     GoogleAuthRequest, 
     TokenResponse, 
@@ -70,18 +73,21 @@ async def google_oauth_callback(
         
         redirect_uri = str(request.url).split('?')[0] if request else GOOGLE_REDIRECT_URI
         
-        return await AuthService.authenticate_with_authorization_code(
+        auth_response = await AuthService.authenticate_with_authorization_code(
             authorization_code=code,
             redirect_uri=redirect_uri
         )
         
-    except HTTPException:
-        raise
+        frontend_redirect = state if state else FRONTEND_URL
+        
+        if auth_response and auth_response.access_token:
+            return RedirectResponse(url=f"{frontend_redirect}?auth=success&access_token={auth_response.access_token}&refresh_token={auth_response.refresh_token}")
+        else:
+            return RedirectResponse(url=f"{frontend_redirect}?error=auth_failed")
+        
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Callback processing failed: {str(e)}"
-        )
+        frontend_redirect = state if state else FRONTEND_URL
+        return RedirectResponse(url=f"{frontend_redirect}?error=auth_failed")
 
 @auth_router.post("/refresh", response_model=RefreshTokenResponse)
 async def refresh_token(refresh_request: RefreshTokenRequest):

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.security import HTTPBearer
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from threading import Thread
 from routers.health_router import health_router
@@ -54,6 +55,14 @@ app = FastAPI(
         {"name": "logs", "description": "Log management endpoints"},
         {"name": "health", "description": "Health check endpoints"}
     ]
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.add_middleware(LoggingMiddleware)

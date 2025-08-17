@@ -17,7 +17,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
 }) => {
   return (
     <div className={`feature-card ${isDark ? 'dark' : 'light'}`}>
-      <div className={`icon-container ${iconBgClass}`}>
+      <div className={`feature-icon ${iconBgClass}`}>
         {icon}
       </div>
       <h3 className={`feature-title ${isDark ? 'dark' : 'light'}`}>
