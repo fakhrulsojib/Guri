@@ -12,16 +12,8 @@ export const authService = {
   },
 
   getCurrentUser: async () => {
-    const accessToken = localStorage.getItem('access_token')
-    if (!accessToken) {
-      throw new Error('No access token found')
-    }
-
     const response = await fetch(`${BACKEND_URL}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
+      credentials: 'include'
     })
     
     if (!response.ok) {
@@ -30,22 +22,38 @@ export const authService = {
     return response.json()
   },
 
-  logout: async () => {
-    const refreshToken = localStorage.getItem('refresh_token')
-    if (!refreshToken) {
-      return { message: 'No refresh token found' }
+  getCurrentUserWithRefresh: async () => {
+    try {
+      return await authService.getCurrentUser()
+    } catch (error) {
+      if (error.message === 'Failed to get user info') {
+        await authService.refreshToken()
+        return await authService.getCurrentUser()
+      }
+      throw error
     }
+  },
 
+  logout: async () => {
     const response = await fetch(`${BACKEND_URL}/auth/logout`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ refresh_token: refreshToken })
+      credentials: 'include'
     })
     
     if (!response.ok) {
       throw new Error('Logout failed')
+    }
+    return response.json()
+  },
+
+  refreshToken: async () => {
+    const response = await fetch(`${BACKEND_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      throw new Error('Token refresh failed')
     }
     return response.json()
   }

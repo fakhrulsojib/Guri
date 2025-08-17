@@ -2,8 +2,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, patch
 from main import app
 from model.log_sources import LogSourceType, LogSourceStatus, LogSourceInDB
-from services.auth_service import get_current_user
-from routers.log_sources_router import security
+from routers.log_sources_router import get_current_user_dependency
 from fastapi import HTTPException, status
 
 def mock_get_current_user():
@@ -15,16 +14,12 @@ def mock_get_current_user():
         "is_active": True
     }
 
-def mock_security():
-    return "mock_token"
-
 class TestLogSourcesRouter:
     """Phase 1: Core Functionality Tests for Log Sources Router"""
     
     def setup_method(self):
         """Set up test dependencies before each test"""
-        app.dependency_overrides[get_current_user] = mock_get_current_user
-        app.dependency_overrides[security] = mock_security
+        app.dependency_overrides[get_current_user_dependency] = mock_get_current_user
     
     def teardown_method(self):
         """Clean up test dependencies after each test"""
@@ -125,20 +120,17 @@ class TestLogSourcesRouter:
         """Test creation without authentication token"""
         app.dependency_overrides.clear()
         client = TestClient(app)
-        
+    
         response = client.post("/api/v1/log-sources", json=mock_log_source_create)
-        
-        assert response.status_code == 403
+    
+        assert response.status_code == 401
     
     def test_create_log_source_invalid_token(self, mock_log_source_create):
         """Test creation with invalid authentication token"""
         def mock_invalid_user():
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         
-        app.dependency_overrides[get_current_user] = mock_invalid_user
+        app.dependency_overrides[get_current_user_dependency] = mock_invalid_user
         client = TestClient(app)
         
         response = client.post("/api/v1/log-sources", json=mock_log_source_create)
@@ -189,10 +181,10 @@ class TestLogSourcesRouter:
         """Test getting log sources without authentication"""
         app.dependency_overrides.clear()
         client = TestClient(app)
-        
+    
         response = client.get("/api/v1/log-sources")
-        
-        assert response.status_code == 403
+    
+        assert response.status_code == 401
     
     @patch('routers.log_sources_router.LogSourceService.get_log_source')
     def test_get_single_log_source_valid_id(self, mock_get_source, mock_log_source_db_result):
@@ -243,10 +235,10 @@ class TestLogSourcesRouter:
         """Test getting log source without authentication"""
         app.dependency_overrides.clear()
         client = TestClient(app)
-        
+    
         response = client.get("/api/v1/log-sources/1")
-        
-        assert response.status_code == 403
+    
+        assert response.status_code == 401
     
     @patch('routers.log_sources_router.LogSourceService.update_log_source')
     def test_update_log_source_partial_update(self, mock_update_service, mock_log_source_db_result):
@@ -315,10 +307,10 @@ class TestLogSourcesRouter:
         """Test updating log source without authentication"""
         app.dependency_overrides.clear()
         client = TestClient(app)
-        
+    
         response = client.patch("/api/v1/log-sources/1", json={"name": "new-name"})
-        
-        assert response.status_code == 403
+    
+        assert response.status_code == 401
     
     @patch('routers.log_sources_router.LogSourceService.delete_log_source')
     def test_delete_log_source_valid_delete(self, mock_delete_service):
@@ -357,10 +349,10 @@ class TestLogSourcesRouter:
         """Test deleting log source without authentication"""
         app.dependency_overrides.clear()
         client = TestClient(app)
-        
+    
         response = client.delete("/api/v1/log-sources/1")
-        
-        assert response.status_code == 403
+    
+        assert response.status_code == 401
     
     @patch('routers.log_sources_router.LogSourceService.get_log_source')
     def test_get_log_source_api_key_valid(self, mock_get_source, mock_log_source_db_result):
@@ -395,4 +387,4 @@ class TestLogSourcesRouter:
         
         response = client.get("/api/v1/log-sources/1/api-key")
         
-        assert response.status_code == 403
+        assert response.status_code == 401

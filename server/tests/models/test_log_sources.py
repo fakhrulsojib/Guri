@@ -7,7 +7,7 @@ def get_test_log_source_base() -> Dict[str, Any]:
     return {
         "name": "test-web-app",
         "description": "Test web application for development",
-        "source_type": "web_app",
+        "source_type": "application",
         "environment": "development",
         "tags": ["frontend", "react", "test"]
     }
@@ -68,7 +68,7 @@ def get_test_log_source_update() -> Dict[str, Any]:
     return {
         "name": "updated-web-app",
         "description": "Updated web application description",
-        "source_type": "mobile_app",
+        "source_type": "application",
         "environment": "production",
         "tags": ["mobile", "ios", "production"],
         "status": "inactive"
@@ -83,7 +83,7 @@ def get_test_log_source_2() -> Dict[str, Any]:
         "id": 2,
         "name": "test-api-service",
         "description": "Test API service for backend",
-        "source_type": "api_service",
+        "source_type": "system",
         "environment": "staging",
         "tags": ["backend", "api", "staging"],
         "user_id": 1,
@@ -104,7 +104,7 @@ def get_test_log_source_3() -> Dict[str, Any]:
         "id": 3,
         "name": "test-database",
         "description": "Test database logs",
-        "source_type": "database",
+        "source_type": "system",
         "environment": "development",
         "tags": ["database", "postgres", "dev"],
         "user_id": 2,  # Different user
@@ -125,7 +125,7 @@ def get_test_inactive_log_source() -> Dict[str, Any]:
         "id": 4,
         "name": "inactive-service",
         "description": "Inactive service for testing",
-        "source_type": "microservice",
+        "source_type": "custom",
         "environment": "testing",
         "tags": ["microservice", "testing", "inactive"],
         "user_id": 1,
@@ -146,7 +146,7 @@ def get_test_suspended_log_source() -> Dict[str, Any]:
         "id": 5,
         "name": "suspended-service",
         "description": "Suspended service for testing",
-        "source_type": "infrastructure",
+        "source_type": "performance",
         "environment": "production",
         "tags": ["infrastructure", "monitoring", "suspended"],
         "user_id": 1,
@@ -177,7 +177,7 @@ def get_test_comprehensive_log_source() -> Dict[str, Any]:
         "id": 6,
         "name": "comprehensive-service",
         "description": "A comprehensive service with all fields populated for thorough testing",
-        "source_type": "web_app",
+        "source_type": "application",
         "environment": "production",
         "tags": ["web", "production", "comprehensive", "testing", "full-featured"],
         "user_id": 1,

@@ -54,19 +54,8 @@ class TokenResponse(BaseModel):
     token_type: str = Field("bearer", description="Token type")
     expires_in: int = Field(..., description="Access token expiration time in seconds")
 
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str = Field(..., description="Valid refresh token")
-
-class RefreshTokenResponse(BaseModel):
-    access_token: str = Field(..., description="New JWT access token")
-    token_type: str = Field("bearer", description="Token type")
-    expires_in: int = Field(..., description="Access token expiration time in seconds")
-
 class GoogleAuthRequest(BaseModel):
     id_token: Optional[str] = Field(None, description="Google ID token")
     access_token: Optional[str] = Field(None, description="Google access token")
     authorization_code: Optional[str] = Field(None, description="Authorization code from Google OAuth")
-    redirect_uri: Optional[str] = Field(None, description="Redirect URI used in OAuth flow")
-
-class LogoutRequest(BaseModel):
-    refresh_token: str = Field(..., description="Refresh token to revoke") 
+    redirect_uri: Optional[str] = Field(None, description="Redirect URI used in OAuth flow") 

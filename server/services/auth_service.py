@@ -1,14 +1,11 @@
 from datetime import datetime, timezone
 from typing import Dict, Any
-from fastapi import HTTPException, status, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException, status, Request
 
 from util.jwt_utils import JWTUtils, JWTConfig
 from util.google_oauth import GoogleOAuthUtils
 from database.UserCrud import UserCRUD, RefreshTokenCRUD
-from model.user import UserCreate, UserUpdate, TokenResponse, RefreshTokenResponse
-
-security = HTTPBearer()
+from model.user import UserCreate, UserUpdate, TokenResponse
 
 class AuthService:
     @staticmethod
@@ -76,22 +73,6 @@ class AuthService:
         )
 
     @staticmethod
-    async def authenticate_with_google_id_token(id_token: str) -> TokenResponse:
-        google_user_info = await GoogleOAuthUtils.verify_google_token(id_token)
-        user = AuthService._create_or_update_user(google_user_info)
-        AuthService._validate_user_active(user)
-
-        return AuthService._create_token_response(user)
-
-    @staticmethod
-    async def authenticate_with_google_access_token(access_token: str) -> TokenResponse:
-        google_user_info = await GoogleOAuthUtils.verify_access_token(access_token)
-        user = AuthService._create_or_update_user(google_user_info)
-        AuthService._validate_user_active(user)
-
-        return AuthService._create_token_response(user)
-
-    @staticmethod
     async def authenticate_with_authorization_code(authorization_code: str, redirect_uri: str) -> TokenResponse:
         token_data = await GoogleOAuthUtils.exchange_code_for_tokens(
             authorization_code=authorization_code,
@@ -103,10 +84,6 @@ class AuthService:
         AuthService._validate_user_active(user)
 
         return AuthService._create_token_response(user)
-
-    @staticmethod
-    def refresh_access_token(refresh_token: str) -> RefreshTokenResponse:
-        return JWTUtils.refresh_access_token(refresh_token)
 
     @staticmethod
     def logout(refresh_token: str) -> Dict[str, str]:
@@ -122,9 +99,62 @@ class AuthService:
         except Exception:
             return {"message": "Successfully logged out"}
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    @staticmethod
+    def refresh_access_token(refresh_token: str) -> Dict[str, str]:
+        """Refresh access token using refresh token"""
+        try:
+            payload = JWTUtils.verify_token(refresh_token, JWTConfig.TOKEN_TYPE_REFRESH)
+            jti = payload.get("jti")
+            
+            if not jti:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid refresh token format"
+                )
+            
+            if RefreshTokenCRUD.is_token_revoked(jti):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Refresh token has been revoked"
+                )
+            
+            user_id = payload.get("sub")
+            email = payload.get("email")
+            
+            if not user_id or not email:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid refresh token payload"
+                )
+            
+            new_access_token = JWTUtils.create_access_token({
+                "sub": user_id,
+                "email": email
+            })
+            
+            return {
+                "access_token": new_access_token,
+                "token_type": "bearer",
+                "expires_in": JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+            }
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token refresh failed"
+            )
+
+def get_current_user(request: Request):
+    """Get current user from HttpOnly cookies instead of HTTPBearer"""
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No access token found in cookies"
+        )
+    
     try:
-        payload = JWTUtils.verify_token(credentials.credentials, JWTConfig.TOKEN_TYPE_ACCESS)
+        payload = JWTUtils.verify_token(access_token, JWTConfig.TOKEN_TYPE_ACCESS)
         user_id = payload.get("sub")
         
         if user_id is None:
@@ -146,13 +176,5 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
-
-def get_current_active_user(current_user = Depends(get_current_user)):
-    if not current_user["is_active"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
-        )
-    return current_user 
+            detail="Invalid access token"
+        ) 
