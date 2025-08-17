@@ -11,19 +11,9 @@ export const authService = {
     return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(FRONTEND_URL)}`
   },
 
-  handleCallback: async (code: string) => {
-    const response = await fetch(`${BACKEND_URL}/auth/google/callback?code=${code}`)
-    if (!response.ok) {
-      throw new Error('Authentication failed')
-    }
-    return response.json()
-  },
-
-  getCurrentUser: async (accessToken: string) => {
-    const response = await fetch(`${BACKEND_URL}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+  getCurrentUser: async () => {
+    const response = await fetch(`${BACKEND_URL}/auth/me-cookies`, {
+      credentials: 'include'
     })
     if (!response.ok) {
       throw new Error('Failed to get user info')
@@ -31,13 +21,10 @@ export const authService = {
     return response.json()
   },
 
-  logout: async (refreshToken: string) => {
+  logout: async () => {
     const response = await fetch(`${BACKEND_URL}/auth/logout`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ refresh_token: refreshToken })
+      credentials: 'include'
     })
     if (!response.ok) {
       throw new Error('Logout failed')

@@ -1,8 +1,9 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.responses import RedirectResponse
 
 from services.auth_service import AuthService, get_current_active_user
+from util.jwt_utils import JWTConfig
 
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
@@ -81,7 +82,24 @@ async def google_oauth_callback(
         frontend_redirect = state if state else FRONTEND_URL
         
         if auth_response and auth_response.access_token:
-            return RedirectResponse(url=f"{frontend_redirect}?auth=success&access_token={auth_response.access_token}&refresh_token={auth_response.refresh_token}")
+            response = RedirectResponse(url=f"{frontend_redirect}?auth=success")
+            response.set_cookie(
+                key="access_token",
+                value=auth_response.access_token,
+                httponly=True,
+                secure=False,  # Set to True in production with HTTPS
+                samesite="lax",
+                max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # Convert minutes to seconds
+            )
+            response.set_cookie(
+                key="refresh_token",
+                value=auth_response.refresh_token,
+                httponly=True,
+                secure=False,  # Set to True in production with HTTPS
+                samesite="lax",
+                max_age=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60  # Convert days to seconds
+            )
+            return response
         else:
             return RedirectResponse(url=f"{frontend_redirect}?error=auth_failed")
         
@@ -103,12 +121,27 @@ async def refresh_token(refresh_request: RefreshTokenRequest):
         )
 
 @auth_router.post("/logout")
-async def logout(logout_request: LogoutRequest):
+async def logout(request: Request):
     try:
-        return AuthService.logout(logout_request.refresh_token)
+        # Get refresh token from cookies
+        refresh_token = request.cookies.get("refresh_token")
+        if not refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No refresh token found in cookies"
+            )
+        
+        # Revoke the refresh token in the database
+        result = AuthService.logout(refresh_token)
+        
+        response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
+        
+        # Clear cookies
+        response_obj.delete_cookie("access_token")
+        response_obj.delete_cookie("refresh_token")
+        
+        return response_obj
     
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -130,4 +163,53 @@ async def get_current_user_info(current_user = Depends(get_current_active_user))
         is_active=current_user["is_active"],
         created_at=current_user["created_at"],
         last_login=current_user["last_login"]
-    ) 
+    )
+
+@auth_router.get("/me-cookies", response_model=UserResponse)
+async def get_current_user_from_cookies(request: Request):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No access token found in cookies"
+        )
+    
+    try:
+        from util.jwt_utils import JWTUtils
+        payload = JWTUtils.verify_token(access_token, "access")
+        user_id = payload.get("sub")
+        
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
+        
+        from database.UserCrud import UserCRUD
+        user = UserCRUD.get_user_by_id(int(user_id))
+        
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        
+        return UserResponse(
+            id=user["id"],
+            email=user["email"],
+            email_verified=user["email_verified"],
+            name=user["name"],
+            given_name=user["given_name"],
+            family_name=user["family_name"],
+            picture=user["picture"],
+            locale=user["locale"],
+            hd=user["hd"],
+            is_active=user["is_active"],
+            created_at=user["created_at"],
+            last_login=user["last_login"]
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid access token"
+        ) 

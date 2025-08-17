@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import { setLoading, setUser, setTokens, logout } from '../store/slices/authSlice'
+import { setLoading, setUser, logout } from '../store/slices/authSlice'
 import { authService } from '../services/authService'
 
 export const useAuth = () => {
   const dispatch = useAppDispatch()
-  const { user, isAuthenticated, accessToken, refreshToken, isLoading } = useAppSelector(state => state.auth)
+  const { user, isAuthenticated, isLoading } = useAppSelector(state => state.auth)
   const hasProcessed = useRef(false)
 
   useEffect(() => {
@@ -28,22 +28,8 @@ export const useAuth = () => {
           hasProcessed.current = true
           dispatch(setLoading(true))
           
-          const accessToken = urlParams.get('access_token')
-          const refreshToken = urlParams.get('refresh_token')
-          
-          if (accessToken && refreshToken) {
-            dispatch(setTokens({
-              accessToken: accessToken,
-              refreshToken: refreshToken
-            }))
-            
-            try {
-              const userInfo = await authService.getCurrentUser(accessToken)
-              dispatch(setUser(userInfo))
-            } catch (userError) {
-              throw new Error('Failed to get user info from backend')
-            }
-          }
+          const userInfo = await authService.getCurrentUser()
+          dispatch(setUser(userInfo))
           
           window.history.replaceState({}, document.title, window.location.pathname)
         } catch (error) {
@@ -68,9 +54,7 @@ export const useAuth = () => {
 
   const handleLogout = async () => {
     try {
-      if (refreshToken) {
-        await authService.logout(refreshToken)
-      }
+      await authService.logout()
     } catch (error) {
       console.error('Logout error:', error)
     } finally {

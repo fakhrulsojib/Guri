@@ -18,64 +18,32 @@ interface User {
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
-  accessToken: string | null
-  refreshToken: string | null
   isLoading: boolean
 }
 
-const getInitialAuthState = (): AuthState => {
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('auth')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch {
-        return {
-          user: null,
-          isAuthenticated: false,
-          accessToken: null,
-          refreshToken: null,
-          isLoading: false
-        }
-      }
-    }
-  }
-  return {
-    user: null,
-    isAuthenticated: false,
-    accessToken: null,
-    refreshToken: null,
-    isLoading: false
-  }
+const initialState: AuthState = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false
 }
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: getInitialAuthState(),
+  initialState,
   reducers: {
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
-      localStorage.setItem('auth', JSON.stringify(state))
     },
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload
       state.isAuthenticated = true
-      localStorage.setItem('auth', JSON.stringify(state))
-    },
-    setTokens: (state, action: PayloadAction<{ accessToken: string; refreshToken: string }>) => {
-      state.accessToken = action.payload.accessToken
-      state.refreshToken = action.payload.refreshToken
-      localStorage.setItem('auth', JSON.stringify(state))
     },
     logout: (state) => {
       state.user = null
       state.isAuthenticated = false
-      state.accessToken = null
-      state.refreshToken = null
-      localStorage.removeItem('auth')
     }
   }
 })
 
-export const { setLoading, setUser, setTokens, logout } = authSlice.actions
+export const { setLoading, setUser, logout } = authSlice.actions
 export default authSlice.reducer 

@@ -12,7 +12,11 @@ const Header: React.FC<HeaderProps> = ({ isDark }) => {
     <header className={`fixed top-0 left-0 right-0 z-50 p-4 ${isDark ? 'bg-gray-900/80 backdrop-blur-sm' : 'bg-white/80 backdrop-blur-sm'}`}>
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <div className={`w-8 h-8 rounded-lg ${isDark ? 'bg-blue-500' : 'bg-gradient-to-r from-blue-500 to-purple-600'}`}></div>
+          <div className={`w-8 h-8 rounded-lg ${isDark ? 'bg-blue-500' : 'bg-gradient-to-r from-blue-500 to-purple-600'} flex items-center justify-center`}>
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
           <span className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Pulse AI</span>
         </div>
         
