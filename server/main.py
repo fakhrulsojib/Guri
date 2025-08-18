@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from threading import Thread
+import secrets
 from routers.health_router import health_router
 from routers.log_router import log_router
 from routers.auth_router import auth_router
@@ -14,6 +15,7 @@ from consumers.raw_log_to_db_consumer import (
 from database.database import check_database_connection
 from util.logging_config import setup_logging
 from middleware.logging_middleware import LoggingMiddleware
+from middleware.csrf_middleware import CSRFMiddleware
 import structlog
 import os
 
@@ -63,9 +65,14 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-CSRF-Token"],
 )
 
 app.add_middleware(LoggingMiddleware)
+
+if os.getenv("DISABLE_CSRF_FOR_TESTS") != "1":
+    secret_key = os.getenv("CSRF_SECRET_KEY", secrets.token_hex(32))
+    app.add_middleware(CSRFMiddleware, secret_key=secret_key)
 
 app.include_router(health_router)
 app.include_router(log_router)

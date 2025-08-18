@@ -1,16 +1,16 @@
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from main import app
 from model.log_sources import LogSourceInDB, LogSourceStatus
+from main import app
 import json
 
 SINGLE_LOG_API_ENDPOINT = "/api/v1/logs"
 
 client = TestClient(app)
 
-@patch("routers.log_router.producer")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_accepts_valid_json(mock_get_source, mock_producer, mock_log_source, mock_raw_log):
+@patch("routers.log_router.producer")
+def test_log_accepts_valid_json(mock_producer, mock_get_source, mock_log_source, mock_raw_log):
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_log_source)
     mock_get_source.return_value = log_source_obj
