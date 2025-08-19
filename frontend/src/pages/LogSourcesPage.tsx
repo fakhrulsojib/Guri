@@ -11,7 +11,6 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-
   useEffect(() => {
     fetchLogSources()
   }, [])
@@ -24,7 +23,6 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
       setError(null)
     } catch (err) {
       setError('Failed to fetch log sources')
-      console.error('Error fetching log sources:', err)
     } finally {
       setLoading(false)
     }
@@ -32,10 +30,7 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
 
   const handleCreateLogSource = () => {
     // TODO: Implement log source creation form
-    console.log('Create log source clicked')
   }
-
-
 
   if (loading) {
     return (
@@ -50,7 +45,7 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className={`text-lg text-red-500`}>
+        <div className="text-lg text-red-500">
           {error}
         </div>
       </div>
@@ -83,7 +78,7 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
       </div>
 
       {/* Log Sources List */}
-      <div className={`rounded-lg border ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
+      <div className={`rounded-lg border ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} overflow-hidden`}>
         {logSources.length === 0 ? (
           <div className="p-8 text-center">
             <div className={`text-6xl mb-4 ${isDark ? 'text-gray-600' : 'text-gray-300'}`}>
@@ -97,23 +92,23 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="overflow-x-auto">
+            <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <tr>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Name
                   </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Description
                   </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Status
                   </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Environment
                   </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Created
                   </th>
                 </tr>
@@ -121,13 +116,13 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
               <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
                 {logSources.map((logSource) => (
                   <tr key={logSource.id} className={`${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    <td className={`px-4 py-4 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'} max-w-xs truncate`}>
                       {logSource.name}
                     </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                    <td className={`px-4 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'} max-w-xs truncate`}>
                       {logSource.description}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         logSource.status === 'active' 
                           ? 'bg-green-100 text-green-800' 
@@ -136,10 +131,10 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
                         {logSource.status}
                       </span>
                     </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                    <td className={`px-4 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'} max-w-xs truncate`}>
                       {logSource.environment}
                     </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                    <td className={`px-4 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                       {new Date(logSource.created_at).toLocaleDateString()}
                     </td>
                   </tr>
