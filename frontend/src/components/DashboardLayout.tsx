@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Header from './Header'
+import ThemeToggle from './ThemeToggle'
 import { DashboardLayoutProps, NavigationItem } from '../types'
 import { LogSourcesIcon, ProfileIcon, SettingsIcon } from './icons'
 
@@ -86,6 +87,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
         <main className="flex-1 p-8">
           {children}
         </main>
+      </div>
+      
+      <div className="fixed bottom-6 right-6 z-50">
+        <ThemeToggle />
       </div>
     </div>
   )

@@ -2,6 +2,7 @@ import React from 'react'
 import Header from './Header'
 import Footer from './Footer'
 import BackgroundDecorations from './BackgroundDecorations'
+import ThemeToggle from './ThemeToggle'
 import { User } from '../types'
 
 interface LayoutProps {
@@ -37,6 +38,10 @@ const Layout: React.FC<LayoutProps> = ({
       
       <BackgroundDecorations isDark={isDark} />
       <Footer isDark={isDark} />
+      
+      <div className="fixed bottom-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
     </div>
   )
 }
