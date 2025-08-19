@@ -1,13 +1,13 @@
 import React from 'react'
-import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 
 interface CTASectionProps {
   isDark: boolean
+  isAuthenticated: boolean
+  handleLogin: () => void
 }
 
-const CTASection: React.FC<CTASectionProps> = ({ isDark }) => {
-  const { isAuthenticated, isLoading, handleLogin } = useAuth()
+const CTASection: React.FC<CTASectionProps> = ({ isDark, isAuthenticated, handleLogin }) => {
   const navigate = useNavigate()
 
   const handleCTAClick = () => {
@@ -16,19 +16,6 @@ const CTASection: React.FC<CTASectionProps> = ({ isDark }) => {
     } else {
       handleLogin()
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="cta-section">
-        <button className="cta-button" disabled>
-          Loading...
-        </button>
-        <p className={`tech-stack ${isDark ? 'dark' : 'light'}`}>
-          Powered by FastAPI • Kafka • PostgreSQL • ChromaDB
-        </p>
-      </div>
-    )
   }
 
   return (

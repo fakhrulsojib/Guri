@@ -13,34 +13,40 @@ export interface LogSource {
 }
 
 export const logSourceService = {
-  getLogSources: async (accessToken: string): Promise<LogSource[]> => {
+  getLogSources: async (): Promise<LogSource[]> => {
+    const headers = await csrfService.getHeaders()
+    
     const response = await fetch(`${BACKEND_URL}/api/v1/log-sources`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+      headers,
+      credentials: 'include'
     })
+    
     if (!response.ok) {
+      if (response.status === 403) {
+        await csrfService.handleCSRFError()
+        return logSourceService.getLogSources()
+      }
       throw new Error('Failed to fetch log sources')
     }
     return response.json()
   },
 
-  createLogSource: async (logSourceData: any, accessToken: string): Promise<LogSource> => {
+  createLogSource: async (logSourceData: any): Promise<LogSource> => {
     const headers = await csrfService.getHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
+      'Content-Type': 'application/json'
     })
     
     const response = await fetch(`${BACKEND_URL}/api/v1/log-sources`, {
       method: 'POST',
       headers,
+      credentials: 'include',
       body: JSON.stringify(logSourceData)
     })
     
     if (!response.ok) {
       if (response.status === 403) {
         await csrfService.handleCSRFError()
-        return logSourceService.createLogSource(logSourceData, accessToken)
+        return logSourceService.createLogSource(logSourceData)
       }
       throw new Error('Failed to create log source')
     }

@@ -1,21 +1,25 @@
 import os
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.responses import RedirectResponse
+import structlog
 
 from services.auth_service import AuthService
 from util.jwt_utils import JWTConfig
 
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", "localhost")
 
 from model.user import (
     TokenResponse, 
     UserResponse
 )
 
+logger = structlog.get_logger()
+
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-@auth_router.get("/google/callback")
+@auth_router.get("/google/callback", include_in_schema=False)
 async def google_oauth_callback(
     code: str = None,
     state: str = None,
@@ -28,47 +32,52 @@ async def google_oauth_callback(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"OAuth error: {error}"
             )
-        
         if not code:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Authorization code is required"
             )
         
-        redirect_uri = str(request.url).split('?')[0] if request else GOOGLE_REDIRECT_URI
-        
+        # Exchange the OAuth code for tokens and set cookies
         auth_response = await AuthService.authenticate_with_authorization_code(
             authorization_code=code,
-            redirect_uri=redirect_uri
+            redirect_uri=f"{request.base_url}auth/google/callback"
         )
         
-        frontend_redirect = state if state else FRONTEND_URL
+        # Create response with cookies set
+        response = RedirectResponse(url=f"{FRONTEND_URL}?auth=success")
         
-        if auth_response and auth_response.access_token:
-            response = RedirectResponse(url=f"{frontend_redirect}?auth=success")
-            response.set_cookie(
-                key="access_token",
-                value=auth_response.access_token,
-                httponly=True,
-                secure=False,  # Set to True in production with HTTPS
-                samesite="lax",
-                max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-            )
-            response.set_cookie(
-                key="refresh_token",
-                value=auth_response.refresh_token,
-                httponly=True,
-                secure=False,  # Set to True in production with HTTPS
-                samesite="lax",
-                max_age=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
-            )
-            return response
-        else:
-            return RedirectResponse(url=f"{frontend_redirect}?error=auth_failed")
+        # Set cookies for authentication (these will only be accessible to the backend)
+        response.set_cookie(
+            key="access_token",
+            value=auth_response.access_token,
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            path="/",
+            domain=COOKIE_DOMAIN
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=auth_response.refresh_token,
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+            path="/",
+            domain=COOKIE_DOMAIN
+        )
         
+        logger.info("OAuth callback successful, cookies set, redirecting to frontend")
+        return response
+            
     except Exception as e:
+        logger.error(f"OAuth callback failed: {str(e)}")
         frontend_redirect = state if state else FRONTEND_URL
         return RedirectResponse(url=f"{frontend_redirect}?error=auth_failed")
+
+
 
 @auth_router.post("/refresh")
 async def refresh_token(request: Request):
@@ -94,7 +103,9 @@ async def refresh_token(request: Request):
             httponly=True,
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
-            max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+            max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            path="/",
+            domain=COOKIE_DOMAIN
         )
         
         return response_obj
@@ -121,8 +132,8 @@ async def logout(request: Request):
         
         response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
         
-        response_obj.delete_cookie("access_token")
-        response_obj.delete_cookie("refresh_token")
+        response_obj.delete_cookie("access_token", path="/", domain=COOKIE_DOMAIN)
+        response_obj.delete_cookie("refresh_token", path="/", domain=COOKIE_DOMAIN)
         
         return response_obj
     

@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.security import HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from threading import Thread
 import secrets
+import os
 from routers.health_router import health_router
 from routers.log_router import log_router
 from routers.auth_router import auth_router
@@ -17,7 +19,6 @@ from util.logging_config import setup_logging
 from middleware.logging_middleware import LoggingMiddleware
 from middleware.csrf_middleware import CSRFMiddleware
 import structlog
-import os
 
 logger = structlog.get_logger()
 
@@ -33,18 +34,38 @@ async def lifespan(app: FastAPI):
     
     logger.info("Starting application", app_name="Pulse AI")
     
-    if not check_database_connection():
-        logger.error("Database connection failed")
+    # Log key environment variables for debugging
+    logger.info("Environment configuration", 
+                jwt_secret_set=bool(os.getenv("JWT_SECRET")),
+                csrf_secret_set=bool(os.getenv("CSRF_SECRET_KEY")),
+                postgres_host=os.getenv("POSTGRES_HOST", "not_set"),
+                frontend_url=os.getenv("FRONTEND_URL", "not_set"))
     
-    consumer_thread = Thread(target=start_raw_log_to_db_consumer, daemon=True)
-    consumer_thread.start()
-    logger.info("Started consumer thread")
+    # Try to check database connection but don't fail startup
+    try:
+        if check_database_connection():
+            logger.info("Database connection successful")
+        else:
+            logger.warning("Database connection failed, continuing with limited functionality")
+    except Exception as e:
+        logger.warning("Database connection check failed, continuing with limited functionality", error=str(e))
+    
+    # Start consumer thread only if database is available
+    try:
+        consumer_thread = Thread(target=start_raw_log_to_db_consumer, daemon=True)
+        consumer_thread.start()
+        logger.info("Started consumer thread")
+    except Exception as e:
+        logger.warning("Failed to start consumer thread", error=str(e))
     
     yield
     
     logger.info("Shutting down application")
-    stop_raw_log_to_db_consumer()
-    consumer_thread.join(timeout=5.0)
+    try:
+        stop_raw_log_to_db_consumer()
+        consumer_thread.join(timeout=5.0)
+    except Exception as e:
+        logger.warning("Error during shutdown", error=str(e))
 
 app = FastAPI(
     title="Pulse AI",

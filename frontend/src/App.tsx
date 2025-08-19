@@ -10,7 +10,7 @@ import { useCSRF } from './hooks/useCSRF'
 
 function App() {
   const { isDark } = useAppSelector(state => state.theme)
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, user, handleLogin, handleLogout } = useAuth()
   const { isInitialized, error } = useCSRF()
 
   if (error) {
@@ -30,7 +30,7 @@ function App() {
     )
   }
 
-  if (!isInitialized) {
+  if (!isInitialized || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -46,15 +46,29 @@ function App() {
       <Routes>
         {/* Home Route */}
         <Route path="/" element={
-          <Layout isDark={isDark}>
-            <HomePage isDark={isDark} />
+          <Layout 
+            isDark={isDark} 
+            isAuthenticated={isAuthenticated}
+            user={user}
+            handleLogin={handleLogin}
+            handleLogout={handleLogout}
+          >
+            <HomePage 
+              isDark={isDark} 
+              isAuthenticated={isAuthenticated}
+              handleLogin={handleLogin}
+            />
           </Layout>
         } />
         
         {/* Dashboard Routes - Protected */}
         <Route path="/dashboard" element={
           isAuthenticated ? (
-            <DashboardLayout isDark={isDark}>
+            <DashboardLayout 
+              isDark={isDark}
+              user={user}
+              handleLogout={handleLogout}
+            >
               <DashboardPage isDark={isDark} />
             </DashboardLayout>
           ) : (
@@ -65,7 +79,11 @@ function App() {
         {/* Profile Route - Protected */}
         <Route path="/dashboard/profile" element={
           isAuthenticated ? (
-            <DashboardLayout isDark={isDark}>
+            <DashboardLayout 
+              isDark={isDark}
+              user={user}
+              handleLogout={handleLogout}
+            >
               <div className="p-6">
                 <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   Profile
@@ -83,7 +101,11 @@ function App() {
         {/* Settings Route - Protected */}
         <Route path="/dashboard/settings" element={
           isAuthenticated ? (
-            <DashboardLayout isDark={isDark}>
+            <DashboardLayout 
+              isDark={isDark}
+              user={user}
+              handleLogout={handleLogout}
+            >
               <div className="p-6">
                 <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   Settings

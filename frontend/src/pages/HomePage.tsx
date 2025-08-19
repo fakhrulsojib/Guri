@@ -6,9 +6,11 @@ import { features } from '../constants/features'
 
 interface HomePageProps {
   isDark: boolean
+  isAuthenticated: boolean
+  handleLogin: () => void
 }
 
-const HomePage: React.FC<HomePageProps> = ({ isDark }) => {
+const HomePage: React.FC<HomePageProps> = ({ isDark, isAuthenticated, handleLogin }) => {
   return (
     <>
       <HeroSection isDark={isDark} />
@@ -28,7 +30,11 @@ const HomePage: React.FC<HomePageProps> = ({ isDark }) => {
         </div>
       </section>
       
-      <CTASection isDark={isDark} />
+      <CTASection 
+        isDark={isDark} 
+        isAuthenticated={isAuthenticated}
+        handleLogin={handleLogin}
+      />
     </>
   )
 }

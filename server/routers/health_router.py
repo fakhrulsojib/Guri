@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 import structlog
 
 logger = structlog.get_logger()
@@ -10,5 +11,19 @@ health_router = APIRouter(
 
 @health_router.get("/", summary="Health Check")
 async def health_check():
-    logger.info("Health check requested")
-    return {"status": "healthy"}
+    try:
+        logger.info("Health check requested")
+        
+        # Basic health check - just return success
+        # Don't check database here to avoid 500 errors
+        return JSONResponse(
+            content={"status": "healthy", "message": "Service is running"},
+            status_code=200,
+            headers={"X-CSRF-Token": "health-check-token"}
+        )
+    except Exception as e:
+        logger.error("Health check failed", error=str(e))
+        return JSONResponse(
+            content={"status": "unhealthy", "error": str(e)},
+            status_code=500
+        )

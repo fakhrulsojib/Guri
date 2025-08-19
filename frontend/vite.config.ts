@@ -2,9 +2,29 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-    plugins: [react()],
-    server: {
-        host: '0.0.0.0',
-        port: 3000
-    }
+	plugins: [react()],
+	server: {
+		host: '0.0.0.0',
+		port: 3000,
+		proxy: {
+			'/auth': {
+				target: 'http://backend:8000',
+				changeOrigin: true,
+				secure: false,
+				rewrite: (path) => path,
+			},
+			'/api': {
+				target: 'http://backend:8000',
+				changeOrigin: true,
+				secure: false,
+				rewrite: (path) => path,
+			},
+			'/health': {
+				target: 'http://backend:8000',
+				changeOrigin: true,
+				secure: false,
+				rewrite: (path) => path,
+			},
+		},
+	},
 }) 

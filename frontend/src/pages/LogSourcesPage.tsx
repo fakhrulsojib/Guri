@@ -10,20 +10,16 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
   const [logSources, setLogSources] = useState<LogSource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { accessToken } = useAppSelector(state => state.auth)
+
 
   useEffect(() => {
-    if (accessToken) {
-      fetchLogSources()
-    }
-  }, [accessToken])
+    fetchLogSources()
+  }, [])
 
   const fetchLogSources = async () => {
-    if (!accessToken) return
-    
     try {
       setLoading(true)
-      const data = await logSourceService.getLogSources(accessToken)
+      const data = await logSourceService.getLogSources()
       setLogSources(data)
       setError(null)
     } catch (err) {
@@ -39,15 +35,7 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
     console.log('Create log source clicked')
   }
 
-  if (!accessToken) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-          No access token available
-        </div>
-      </div>
-    )
-  }
+
 
   if (loading) {
     return (

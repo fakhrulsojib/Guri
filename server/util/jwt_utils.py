@@ -4,8 +4,11 @@ from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from fastapi import HTTPException, status
 import secrets
+import structlog
 
 from database.UserCrud import RefreshTokenCRUD
+
+logger = structlog.get_logger()
 
 class JWTConfig:
     SECRET_KEY: str = os.getenv("JWT_SECRET", "")
@@ -14,6 +17,18 @@ class JWTConfig:
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     TOKEN_TYPE_ACCESS: str = "access"
     TOKEN_TYPE_REFRESH: str = "refresh"
+    
+    @classmethod
+    def validate_config(cls):
+        if not cls.SECRET_KEY:
+            logger.error("JWT_SECRET not set - application cannot start without proper JWT configuration")
+            raise ValueError("JWT_SECRET environment variable is required")
+        if len(cls.SECRET_KEY) < 32:
+            logger.error("JWT_SECRET too short - must be at least 32 characters")
+            raise ValueError("JWT_SECRET must be at least 32 characters long")
+
+# Validate JWT configuration on import
+JWTConfig.validate_config()
 
 class JWTUtils:
     @staticmethod
