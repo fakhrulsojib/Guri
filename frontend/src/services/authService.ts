@@ -68,17 +68,44 @@ export const authService = {
   },
 
   logout: async () => {
-    const headers = await csrfService.getHeaders()
-    const response = await fetch(`/auth/logout`, {
-      method: 'POST',
-      headers,
-      credentials: 'include'
-    })
-    
-    if (!response.ok) {
+    try {
+      const headers = await csrfService.getHeaders()
+      const response = await fetch(`/auth/logout`, {
+        method: 'POST',
+        headers,
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        if (response.status === 403) {
+          await csrfService.handleCSRFError()
+          const retryHeaders = await csrfService.getHeaders()
+          const retryResponse = await fetch(`/auth/logout`, {
+            method: 'POST',
+            headers: retryHeaders,
+            credentials: 'include'
+          })
+          if (!retryResponse.ok) {
+            throw new Error('Logout failed after CSRF retry')
+          }
+          return retryResponse.json()
+        }
+        throw new Error('Logout failed')
+      }
+      return response.json()
+    } catch (error) {
+      if (error.message === 'Failed to fetch CSRF token') {
+        const response = await fetch(`/auth/logout`, {
+          method: 'POST',
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          throw new Error('Logout failed')
+        }
+        return response.json()
+      }
       throw new Error('Logout failed')
     }
-    return response.json()
   },
 
   refreshToken: async () => {

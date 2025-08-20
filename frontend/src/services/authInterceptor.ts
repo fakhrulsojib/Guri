@@ -1,8 +1,7 @@
 import { store } from '../store'
 import { setUser, setAccessToken, logout } from '../store/slices/authSlice'
 import { authService } from './authService'
-
-
+import { tabSyncService } from './tabSyncService'
 
 class AuthInterceptor {
   private isInitialized = false
@@ -17,6 +16,7 @@ class AuthInterceptor {
       const userInfo = await authService.getCurrentUserWithRefresh()
       store.dispatch(setUser(userInfo))
       store.dispatch(setAccessToken('authenticated'))
+      tabSyncService.broadcastAuthState(userInfo, true)
     } catch (error) {
       store.dispatch(logout())
     } finally {
@@ -34,6 +34,7 @@ class AuthInterceptor {
       const userInfo = await authService.getCurrentUserWithRefresh()
       store.dispatch(setUser(userInfo))
       store.dispatch(setAccessToken('authenticated'))
+      tabSyncService.broadcastAuthState(userInfo, true)
       return true
     } catch (error) {
       store.dispatch(logout())

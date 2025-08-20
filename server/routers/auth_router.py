@@ -119,13 +119,12 @@ async def refresh_token(request: Request):
 async def logout(request: Request):
     try:
         refresh_token = request.cookies.get("refresh_token")
-        if not refresh_token:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No refresh token found in cookies"
-            )
         
-        result = AuthService.logout(refresh_token)
+        if refresh_token:
+            try:
+                result = AuthService.logout(refresh_token)
+            except Exception:
+                pass
         
         response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
         
@@ -134,13 +133,13 @@ async def logout(request: Request):
         
         return response_obj
     
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Logout failed: {str(e)}"
-        )
+        response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
+        
+        response_obj.delete_cookie("access_token", path="/", domain=COOKIE_DOMAIN)
+        response_obj.delete_cookie("refresh_token", path="/auth/refresh", domain=COOKIE_DOMAIN)
+        
+        return response_obj
 
 @auth_router.get("/me", response_model=UserResponse)
 async def get_current_user_info(request: Request):

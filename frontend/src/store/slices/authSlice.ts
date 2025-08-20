@@ -5,7 +5,8 @@ const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   accessToken: null,
-  isLoading: false
+  isLoading: false,
+  lastUpdate: Date.now()
 }
 
 const authSlice = createSlice({
@@ -18,14 +19,16 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload
       state.isAuthenticated = true
+      state.lastUpdate = Date.now()
     },
     setAccessToken: (state, action: PayloadAction<string>) => {
       state.accessToken = action.payload
     },
-    logout: (state) => {
-      state.user = null
-      state.isAuthenticated = false
-      state.accessToken = null
+    logout: () => {
+      return {
+        ...initialState,
+        lastUpdate: Date.now()
+      }
     }
   }
 })

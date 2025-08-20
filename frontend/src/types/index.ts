@@ -20,6 +20,7 @@ export interface AuthState {
   isAuthenticated: boolean
   accessToken: string | null
   isLoading: boolean
+  lastUpdate: number
 }
 
 export interface NavigationItem {

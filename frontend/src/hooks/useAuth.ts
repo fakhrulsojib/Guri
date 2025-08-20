@@ -3,6 +3,8 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { setLoading, setUser, setAccessToken, logout } from '../store/slices/authSlice'
 import { authService } from '../services/authService'
 import { authInterceptor } from '../services/authInterceptor'
+import { tabSyncService } from '../services/tabSyncService'
+import { store } from '../store'
 
 export const useAuth = () => {
   const dispatch = useAppDispatch()
@@ -10,6 +12,9 @@ export const useAuth = () => {
   const hasCheckedAuth = useRef(false)
   const isCheckingAuth = useRef(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const lastBroadcastRef = useRef<string>('')
+
+
 
   const checkAuthFromCookies = useCallback(async () => {
     if (isCheckingAuth.current) return
@@ -34,6 +39,7 @@ export const useAuth = () => {
     const checkInitialAuth = async () => {
       if (hasCheckedAuth.current) return
       
+      tabSyncService.initialize()
       await authInterceptor.initialize()
       
       const urlParams = new URLSearchParams(window.location.search)
@@ -62,8 +68,29 @@ export const useAuth = () => {
     return () => clearTimeout(timeoutId)
   }, [dispatch, checkAuthFromCookies, isAuthenticated])
 
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const userKey = `${user.id}-${isAuthenticated}`
+      if (lastBroadcastRef.current !== userKey) {
+        lastBroadcastRef.current = userKey
+        tabSyncService.broadcastAuthState(user, isAuthenticated)
+      }
+    }
+  }, [isAuthenticated, user])
+
+  useEffect(() => {
+    return () => {
+      tabSyncService.cleanup()
+    }
+  }, [])
+
 
   const handleLogin = () => {
+    if (isAuthenticated) {
+      window.location.reload()
+      return
+    }
+    
     const loginUrl = authService.getGoogleLoginUrl()
     window.location.href = loginUrl
   }
@@ -75,6 +102,7 @@ export const useAuth = () => {
     } finally {
       dispatch(logout())
       authInterceptor.reset()
+      tabSyncService.broadcastLogout()
       window.history.replaceState({}, document.title, window.location.pathname)
     }
   }

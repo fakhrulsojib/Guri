@@ -48,23 +48,13 @@ class CSRFService {
       
       const token = response.headers.get('X-CSRF-Token')
       if (!token) {
-
-        // Use a fallback token for development
-        this.csrfToken = 'dev-csrf-token'
-        return this.csrfToken
+        throw new Error('No CSRF token in response headers')
       }
       
       this.csrfToken = token
-      
-      
-
-      
       return token
     } catch (error) {
-      
-      // Use fallback token for development
-      this.csrfToken = 'dev-csrf-token'
-      return this.csrfToken
+      throw new Error('Failed to fetch CSRF token')
     } finally {
       this.isRefreshing = false
     }
