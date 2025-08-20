@@ -39,7 +39,8 @@ class TestLogout:
     
     def test_logout_without_cookies(self):
         response = client.post("/auth/logout")
-        assert response.status_code == 400
+        assert response.status_code == 200
+        assert response.json() == {"message": "Successfully logged out"}
     
     def test_logout_with_invalid_cookies(self):
         client.cookies.set("refresh_token", "invalid_token")

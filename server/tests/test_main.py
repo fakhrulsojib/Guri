@@ -25,7 +25,7 @@ def test_health_endpoint():
     client = TestClient(app)
     response = client.get("/api/v1/health/")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
+    assert response.json() == {"status": "healthy", "message": "Service is running"}
 
 def test_app_lifespan_runs():
     from main import app
