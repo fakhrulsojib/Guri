@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { setLoading, setUser, setAccessToken, logout } from '../store/slices/authSlice'
 import { authService } from '../services/authService'
@@ -9,6 +9,7 @@ export const useAuth = () => {
   const { user, isAuthenticated, accessToken, isLoading } = useAppSelector(state => state.auth)
   const hasCheckedAuth = useRef(false)
   const isCheckingAuth = useRef(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   const checkAuthFromCookies = useCallback(async () => {
     if (isCheckingAuth.current) return
@@ -54,11 +55,12 @@ export const useAuth = () => {
       }
       
       hasCheckedAuth.current = true
+      setIsInitialized(true)
     }
 
     const timeoutId = setTimeout(checkInitialAuth, 100)
     return () => clearTimeout(timeoutId)
-  }, [dispatch, checkAuthFromCookies])
+  }, [dispatch, checkAuthFromCookies, isAuthenticated])
 
 
   const handleLogin = () => {
@@ -82,6 +84,7 @@ export const useAuth = () => {
     isAuthenticated,
     accessToken,
     isLoading,
+    isInitialized,
     handleLogin,
     handleLogout
   }

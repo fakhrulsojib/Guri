@@ -62,7 +62,7 @@ const GoogleCallback: React.FC = () => {
         navigate(redirectUrl, { replace: true })
 
       } catch (err) {
-        console.error('Google callback error:', err)
+
         setError(err instanceof Error ? err.message : 'Authentication failed')
         setIsProcessing(false)
       }

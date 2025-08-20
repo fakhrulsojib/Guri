@@ -10,8 +10,10 @@ import { useCSRF } from './hooks/useCSRF'
 
 function App() {
   const { isDark } = useAppSelector(state => state.theme)
-  const { isAuthenticated, isLoading: authLoading, user, handleLogin, handleLogout } = useAuth()
-  const { isInitialized, error } = useCSRF()
+  const { isAuthenticated, isLoading: authLoading, isInitialized: authInitialized, user, handleLogin, handleLogout } = useAuth()
+  const { isInitialized: csrfInitialized, error } = useCSRF()
+
+
 
   if (error) {
     return (
@@ -30,7 +32,7 @@ function App() {
     )
   }
 
-  if (!isInitialized || authLoading) {
+  if (!csrfInitialized || !authInitialized || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

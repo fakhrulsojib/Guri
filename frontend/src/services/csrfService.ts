@@ -36,36 +36,32 @@ class CSRFService {
     this.isRefreshing = true
     
     try {
-      console.log('Fetching CSRF token from:', CSRF_ENDPOINT)
+
       const response = await fetch(`${CSRF_ENDPOINT}`, {
         credentials: 'include'
       })
       
       if (!response.ok) {
-        console.error('CSRF endpoint returned error:', response.status, response.statusText)
+
         throw new Error(`Failed to fetch CSRF token: ${response.status} ${response.statusText}`)
       }
       
       const token = response.headers.get('X-CSRF-Token')
       if (!token) {
-        console.warn('No CSRF token in response headers, using fallback')
+
         // Use a fallback token for development
         this.csrfToken = 'dev-csrf-token'
         return this.csrfToken
       }
       
       this.csrfToken = token
-      console.log('CSRF token obtained successfully')
       
-      // Set a timeout to clear the token after 5 minutes (development)
-      setTimeout(() => {
-        console.log('CSRF token expired, clearing...')
-        this.csrfToken = null
-      }, 5 * 60 * 1000) // 5 minutes
+      
+
       
       return token
     } catch (error) {
-      console.error('Failed to refresh CSRF token:', error)
+      
       // Use fallback token for development
       this.csrfToken = 'dev-csrf-token'
       return this.csrfToken
@@ -81,7 +77,6 @@ class CSRFService {
   }
 
   async getHeaders(baseHeaders: Record<string, string> = {}): Promise<Record<string, string>> {
-    console.log('getHeaders called - checking if we need to fetch CSRF token...')
     const token = await this.getToken()
     return {
       ...baseHeaders,
