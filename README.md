@@ -76,25 +76,6 @@ docker exec postgres_db psql -U postgres -d fastapi_db -c "\dt"
 - **ChromaDB** - Vector database for AI-powered insights
 - **JWT Authentication** - Secure token-based authentication system
 
-## 🌐 Frontend Development
-
-The frontend is a React TypeScript application built with Vite that runs entirely through Docker.
-
-**Tech Stack:**
-- React 18
-- TypeScript
-- Vite
-- Minimal dependencies
-
-**Access:**
-- Development: http://localhost:3000
-- Hot reload enabled for development
-
-**Build for Production:**
-```bash
-docker compose exec frontend npm run build
-```
-
 ## 🔧 Service Ports
 
 - **Frontend**: http://localhost:3000

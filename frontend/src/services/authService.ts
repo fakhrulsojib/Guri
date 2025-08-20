@@ -1,5 +1,3 @@
-const BACKEND_URL = '' // use same-origin via Vite proxy in dev
-const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:3000'
 const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '105760145216-7ub4ppuqp57j6anc608t3ke2r0pmk1md.apps.googleusercontent.com'
 
@@ -9,12 +7,31 @@ let refreshInFlight: Promise<any> | null = null
 let getCurrentUserInFlight: Promise<any> | null = null
 
 export const authService = {
+  apiCallWithRetry: async <T>(
+    apiCall: () => Promise<T>,
+    retryCount: number = 1
+  ): Promise<T> => {
+    try {
+      return await apiCall()
+    } catch (error: any) {
+      if (error.message === 'Unauthorized' && retryCount > 0) {
+        try {
+          await authService.refreshToken()
+          return await apiCall()
+        } catch (refreshError) {
+          throw refreshError
+        }
+      }
+      throw error
+    }
+  },
+
   getGoogleLoginUrl: () => {
     const clientId = GOOGLE_CLIENT_ID
-    const redirectUri = `${VITE_BACKEND_URL}/auth/google/callback` // backend callback URL
+    const redirectUri = `${VITE_BACKEND_URL}/auth/google/callback`
     const scope = 'email profile openid'
     
-    return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(FRONTEND_URL)}`
+    return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(window.location.origin)}`
   },
 
   getCurrentUser: async () => {
@@ -24,17 +41,17 @@ export const authService = {
 
     getCurrentUserInFlight = (async () => {
       try {
-        console.log('Fetching current user from /auth/me')
         const response = await fetch(`/auth/me`, {
           credentials: 'include'
         })
         
         if (!response.ok) {
-          console.error('Failed to get user info, status:', response.status)
+          if (response.status === 401) {
+            throw new Error('Unauthorized')
+          }
           throw new Error('Failed to get user info')
         }
         const userData = await response.json()
-        console.log('User data received:', userData)
         return userData
       } finally {
         getCurrentUserInFlight = null
@@ -45,16 +62,9 @@ export const authService = {
   },
 
   getCurrentUserWithRefresh: async () => {
-    try {
+    return authService.apiCallWithRetry(async () => {
       return await authService.getCurrentUser()
-    } catch (error: any) {
-      console.log('getCurrentUser failed, attempting token refresh:', error.message)
-      if (error.message === 'Failed to get user info') {
-        await authService.refreshToken()
-        return await authService.getCurrentUser()
-      }
-      throw error
-    }
+    })
   },
 
   logout: async () => {
@@ -66,10 +76,6 @@ export const authService = {
     })
     
     if (!response.ok) {
-      if (response.status === 403) {
-        await csrfService.handleCSRFError()
-        return authService.logout()
-      }
       throw new Error('Logout failed')
     }
     return response.json()
@@ -81,7 +87,6 @@ export const authService = {
     }
 
     refreshInFlight = (async () => {
-      console.log('Attempting to refresh access token')
       const headers = await csrfService.getHeaders()
       const response = await fetch(`/auth/refresh`, {
         method: 'POST',
@@ -90,26 +95,9 @@ export const authService = {
       })
       
       if (!response.ok) {
-        console.error('Token refresh failed, status:', response.status)
-        if (response.status === 403) {
-          await csrfService.handleCSRFError()
-          const retryHeaders = await csrfService.getHeaders()
-          const retryResp = await fetch(`/auth/refresh`, {
-            method: 'POST',
-            headers: retryHeaders,
-            credentials: 'include'
-          })
-          if (!retryResp.ok) {
-            throw new Error('Token refresh failed')
-          }
-          const retryResult = await retryResp.json()
-          console.log('Token refresh successful (after retry):', retryResult)
-          return retryResult
-        }
         throw new Error('Token refresh failed')
       }
       const result = await response.json()
-      console.log('Token refresh successful:', result)
       return result
     })()
 

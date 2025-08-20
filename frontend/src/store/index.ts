@@ -7,8 +7,8 @@ import authReducer from './slices/authSlice'
 const persistConfig = {
   key: 'pulse_ai_root',
   storage,
-  whitelist: ['theme'], // Only persist theme, not auth data
-  blacklist: ['auth'] // Explicitly exclude auth from persistence
+  whitelist: ['theme'],
+  blacklist: ['auth']
 }
 
 const rootReducer = combineReducers({

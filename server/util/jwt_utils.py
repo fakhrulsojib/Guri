@@ -27,7 +27,6 @@ class JWTConfig:
             logger.error("JWT_SECRET too short - must be at least 32 characters")
             raise ValueError("JWT_SECRET must be at least 32 characters long")
 
-# Validate JWT configuration on import
 JWTConfig.validate_config()
 
 class JWTUtils:

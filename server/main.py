@@ -34,14 +34,6 @@ async def lifespan(app: FastAPI):
     
     logger.info("Starting application", app_name="Pulse AI")
     
-    # Log key environment variables for debugging
-    logger.info("Environment configuration", 
-                jwt_secret_set=bool(os.getenv("JWT_SECRET")),
-                csrf_secret_set=bool(os.getenv("CSRF_SECRET_KEY")),
-                postgres_host=os.getenv("POSTGRES_HOST", "not_set"),
-                frontend_url=os.getenv("FRONTEND_URL", "not_set"))
-    
-    # Try to check database connection but don't fail startup
     try:
         if check_database_connection():
             logger.info("Database connection successful")
@@ -50,7 +42,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("Database connection check failed, continuing with limited functionality", error=str(e))
     
-    # Start consumer thread only if database is available
     try:
         consumer_thread = Thread(target=start_raw_log_to_db_consumer, daemon=True)
         consumer_thread.start()

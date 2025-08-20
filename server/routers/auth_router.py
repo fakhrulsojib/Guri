@@ -38,16 +38,13 @@ async def google_oauth_callback(
                 detail="Authorization code is required"
             )
         
-        # Exchange the OAuth code for tokens and set cookies
         auth_response = await AuthService.authenticate_with_authorization_code(
             authorization_code=code,
             redirect_uri=f"{request.base_url}auth/google/callback"
         )
         
-        # Create response with cookies set
         response = RedirectResponse(url=f"{FRONTEND_URL}?auth=success")
         
-        # Set cookies for authentication (these will only be accessible to the backend)
         response.set_cookie(
             key="access_token",
             value=auth_response.access_token,
@@ -65,7 +62,7 @@ async def google_oauth_callback(
             secure=False,  # Set to True in production with HTTPS
             samesite="lax",
             max_age=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-            path="/",
+            path="/auth/refresh",
             domain=COOKIE_DOMAIN
         )
         
@@ -133,7 +130,7 @@ async def logout(request: Request):
         response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
         
         response_obj.delete_cookie("access_token", path="/", domain=COOKIE_DOMAIN)
-        response_obj.delete_cookie("refresh_token", path="/", domain=COOKIE_DOMAIN)
+        response_obj.delete_cookie("refresh_token", path="/auth/refresh", domain=COOKIE_DOMAIN)
         
         return response_obj
     
