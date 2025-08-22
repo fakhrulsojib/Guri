@@ -76,10 +76,6 @@ docker exec postgres_db psql -U postgres -d fastapi_db -c "\dt"
 - **ChromaDB** - Vector database for AI-powered insights
 - **JWT Authentication** - Secure token-based authentication system
 
-## 🔧 Service Ports
+## 🌐 Live Demo
 
-- **Frontend**: https://fakhrulsojib.mooo.com (via Nginx proxy)
-- **Backend API**: https://fakhrulsojib.mooo.com (via Nginx proxy)
-- **Kafka UI**: https://fakhrulsojib.mooo.com:8080
-- **PostgreSQL**: fakhrulsojib.mooo.com:5432
-- **ChromaDB**: https://fakhrulsojib.mooo.com:8001
+A live site available at: https://fakhrulsojib.mooo.com
