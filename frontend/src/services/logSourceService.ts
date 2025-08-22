@@ -99,5 +99,32 @@ export const logSourceService = {
       throw new Error('Failed to fetch API key')
     }
     return response.json()
+  },
+
+  updateLogSource: async (id: number, logSourceData: any): Promise<LogSource> => {
+    const headers = await csrfService.getHeaders({
+      'Content-Type': 'application/json'
+    })
+    
+    const response = await fetch(`${BACKEND_URL}/api/v1/log-sources/${id}`, {
+      method: 'PATCH',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify(logSourceData)
+    })
+    
+    if (!response.ok) {
+      if (response.status === 403) {
+        await csrfService.handleCSRFError()
+        return logSourceService.updateLogSource(id, logSourceData)
+      }
+      if (response.status === 404) {
+        throw new Error('Log source not found')
+      }
+      const error = new Error('Failed to update log source')
+      ;(error as any).response = response
+      throw error
+    }
+    return response.json()
   }
 } 

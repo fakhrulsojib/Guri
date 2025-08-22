@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { logSourceService, LogSource } from '../services/logSourceService'
 import { formatLogSourceType, formatEnvironment, formatStatus } from '../utils/formatters'
+import CreateLogSourceModal from '../components/CreateLogSourceModal'
 
 interface LogSourceDetailPageProps {
   isDark: boolean
@@ -16,6 +17,7 @@ const LogSourceDetailPage: React.FC<LogSourceDetailPageProps> = ({ isDark }) => 
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [showApiKey, setShowApiKey] = useState(false)
   const [apiKeyLoading, setApiKeyLoading] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   useEffect(() => {
     if (logSourceId) {
@@ -38,6 +40,19 @@ const LogSourceDetailPage: React.FC<LogSourceDetailPageProps> = ({ isDark }) => 
 
   const handleBack = () => {
     navigate('/dashboard')
+  }
+
+  const handleUpdate = () => {
+    setIsEditModalOpen(true)
+  }
+
+  const handleEditModalClose = () => {
+    setIsEditModalOpen(false)
+  }
+
+  const handleEditSuccess = () => {
+    setIsEditModalOpen(false)
+    fetchLogSource()
   }
 
   const handleShowApiKey = async () => {
@@ -93,28 +108,41 @@ const LogSourceDetailPage: React.FC<LogSourceDetailPageProps> = ({ isDark }) => 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={handleBack}
-          className={`p-2 rounded-lg transition-all duration-200 ${
-            isDark 
-              ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-          }`}
-          aria-label="Back to dashboard"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div>
-          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {logSource.name}
-          </h1>
-          <p className={`mt-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-            Log Source Details
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleBack}
+            className={`p-2 rounded-lg transition-all duration-200 ${
+              isDark 
+                ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+            aria-label="Back to dashboard"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {logSource.name}
+            </h1>
+            <p className={`mt-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+              Log Source Details
+            </p>
+          </div>
         </div>
+        
+        <button
+          onClick={handleUpdate}
+          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+            isDark 
+              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
+          }`}
+        >
+          Update Log Source
+        </button>
       </div>
 
       {/* Main Content */}
@@ -240,11 +268,11 @@ const LogSourceDetailPage: React.FC<LogSourceDetailPageProps> = ({ isDark }) => 
                   <label className={`block text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     API Key
                   </label>
-                  <div className="mt-1">
+                  <div className="mt-1 flex items-center space-x-2">
                     <button
                       onClick={handleShowApiKey}
                       disabled={apiKeyLoading}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                         apiKeyLoading
                           ? 'bg-gray-400 cursor-not-allowed'
                           : isDark 
@@ -257,22 +285,22 @@ const LogSourceDetailPage: React.FC<LogSourceDetailPageProps> = ({ isDark }) => 
                     </button>
                     
                     {showApiKey && apiKey && (
-                      <div className="mt-2 space-y-2">
-                        <code className={`block w-full px-3 py-2 rounded-md text-sm font-mono break-all ${
+                      <div className="relative inline-block">
+                        <code className={`block px-3 py-2 pr-10 rounded-md text-sm font-mono break-all ${
                           isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'
                         }`}>
                           {apiKey}
                         </code>
                         <button
                           onClick={() => navigator.clipboard.writeText(apiKey)}
-                          className={`w-full px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                            isDark 
-                              ? 'bg-green-600 hover:bg-green-700 text-white' 
-                              : 'bg-green-500 hover:bg-green-600 text-white'
+                          className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded text-gray-500 hover:text-gray-700 transition-colors duration-200 ${
+                            isDark ? 'hover:text-gray-300' : 'hover:text-gray-900'
                           }`}
                           aria-label="Copy API key to clipboard"
                         >
-                          Copy API Key
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
                         </button>
                       </div>
                     )}
@@ -413,9 +441,15 @@ const LogSourceDetailPage: React.FC<LogSourceDetailPageProps> = ({ isDark }) => 
         </div>
       </div>
 
-
-
-
+      {/* Edit Modal */}
+      <CreateLogSourceModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditModalClose}
+        onSuccess={handleEditSuccess}
+        isDark={isDark}
+        editMode={true}
+        existingData={logSource}
+      />
     </div>
   )
 }

@@ -7,6 +7,8 @@ interface CreateLogSourceModalProps {
   onClose: () => void
   onSuccess: () => void
   isDark: boolean
+  editMode?: boolean
+  existingData?: any
 }
 
 interface LogSourceFormData {
@@ -21,7 +23,9 @@ const CreateLogSourceModal: React.FC<CreateLogSourceModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  isDark
+  isDark,
+  editMode = false,
+  existingData = null
 }) => {
   const [formData, setFormData] = useState<LogSourceFormData>({
     name: '',
@@ -41,8 +45,26 @@ const CreateLogSourceModal: React.FC<CreateLogSourceModalProps> = ({
       setError(null)
       setFieldErrors({})
       setFocusedField(null)
+      
+      if (editMode && existingData) {
+        setFormData({
+          name: existingData.name || '',
+          description: existingData.description || '',
+          source_type: existingData.source_type || 'application',
+          environment: existingData.environment || 'development',
+          tags: existingData.tags || []
+        })
+      } else {
+        setFormData({
+          name: '',
+          description: '',
+          source_type: 'application',
+          environment: 'development',
+          tags: []
+        })
+      }
     }
-  }, [isOpen])
+  }, [isOpen, editMode, existingData])
 
   React.useEffect(() => {
     const uniqueTags = Array.from(new Set(formData.tags))
@@ -102,39 +124,29 @@ const CreateLogSourceModal: React.FC<CreateLogSourceModalProps> = ({
     
     setLoading(true)
     setError(null)
-    setFieldErrors({})
-
+    
     try {
-      await logSourceService.createLogSource(formData)
-      onSuccess()
-      onClose()
-      resetForm()
-    } catch (err: any) {
-      if (err.response) {
-        const response = await err.response.json()
-        if (response.detail && Array.isArray(response.detail)) {
-          const errors: Record<string, string> = {}
-          response.detail.forEach((error: any) => {
-            if (error.loc && error.loc.length > 1) {
-              const fieldName = error.loc[1]
-              errors[fieldName] = error.msg
-            }
-          })
-          setFieldErrors(errors)
-        } else if (response.detail) {
-          setError(response.detail)
-          setFieldErrors({})
-        } else {
-          setError('Failed to create log source')
-          setFieldErrors({})
-        }
-      } else if (err.message) {
-        setError(err.message)
-        setFieldErrors({})
+      if (editMode && existingData) {
+        await logSourceService.updateLogSource(existingData.id, {
+          name: formData.name,
+          description: formData.description,
+          source_type: formData.source_type,
+          environment: formData.environment,
+          tags: formData.tags
+        })
       } else {
-        setError('Failed to create log source')
-        setFieldErrors({})
+        await logSourceService.createLogSource({
+          name: formData.name,
+          description: formData.description,
+          source_type: formData.source_type,
+          environment: formData.environment,
+          tags: formData.tags
+        })
       }
+      
+      onSuccess()
+    } catch (err: any) {
+      setError(err.message || 'Failed to save log source')
     } finally {
       setLoading(false)
     }
@@ -509,7 +521,7 @@ const CreateLogSourceModal: React.FC<CreateLogSourceModalProps> = ({
                     : 'bg-blue-500 hover:bg-blue-600'
               } text-white`}
             >
-              {loading ? 'Creating...' : 'Create Log Source'}
+              {loading ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Log Source' : 'Create Log Source')}
             </button>
           </div>
         </form>
