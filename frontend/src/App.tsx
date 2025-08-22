@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import DashboardLayout from './components/DashboardLayout'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
+import LogSourceDetailPage from './pages/LogSourceDetailPage'
 import { useAuth } from './hooks/useAuth'
 import { useCSRF } from './hooks/useCSRF'
 
@@ -12,10 +13,6 @@ function App() {
   const { isDark } = useAppSelector(state => state.theme)
   const { isAuthenticated, isLoading: authLoading, isInitialized: authInitialized, user, handleLogin, handleLogout } = useAuth()
   const { isInitialized: csrfInitialized, error } = useCSRF()
-
-
-
-
 
   if (error) {
     return (
@@ -102,6 +99,21 @@ function App() {
           )
         } />
         
+        {/* Log Source Detail Route - Protected */}
+        <Route path="/dashboard/log-sources/:logSourceId" element={
+          isAuthenticated ? (
+            <DashboardLayout 
+              isDark={isDark}
+              user={user}
+              handleLogout={handleLogout}
+            >
+              <LogSourceDetailPage isDark={isDark} />
+            </DashboardLayout>
+          ) : (
+            <Navigate to="/" replace />
+          )
+        } />
+
         {/* Settings Route - Protected */}
         <Route path="/dashboard/settings" element={
           isAuthenticated ? (

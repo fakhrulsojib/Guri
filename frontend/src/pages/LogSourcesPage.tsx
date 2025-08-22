@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { logSourceService, LogSource } from '../services/logSourceService'
 import { useAppSelector } from '../store/hooks'
 import CreateLogSourceModal from '../components/CreateLogSourceModal'
@@ -9,6 +10,7 @@ interface LogSourcesPageProps {
 }
 
 const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
+  const navigate = useNavigate()
   const [logSources, setLogSources] = useState<LogSource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -132,7 +134,20 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
               </thead>
               <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
                 {logSources.map((logSource) => (
-                  <tr key={logSource.id} className={`${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                  <tr 
+                    key={logSource.id} 
+                    className={`${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} cursor-pointer transition-colors duration-200`}
+                    onClick={() => navigate(`/dashboard/log-sources/${logSource.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        navigate(`/dashboard/log-sources/${logSource.id}`)
+                      }
+                    }}
+                    aria-label={`View details for ${logSource.name}`}
+                  >
                     <td className={`px-4 py-4 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'} max-w-xs truncate`}>
                       {logSource.name}
                     </td>

@@ -57,5 +57,47 @@ export const logSourceService = {
       throw error
     }
     return response.json()
+  },
+
+  getLogSource: async (id: number): Promise<LogSource> => {
+    const headers = await csrfService.getHeaders()
+    
+    const response = await fetch(`${BACKEND_URL}/api/v1/log-sources/${id}`, {
+      headers,
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      if (response.status === 403) {
+        await csrfService.handleCSRFError()
+        return logSourceService.getLogSource(id)
+      }
+      if (response.status === 404) {
+        throw new Error('Log source not found')
+      }
+      throw new Error('Failed to fetch log source')
+    }
+    return response.json()
+  },
+
+  getLogSourceApiKey: async (id: number): Promise<{ api_key: string }> => {
+    const headers = await csrfService.getHeaders()
+    
+    const response = await fetch(`${BACKEND_URL}/api/v1/log-sources/${id}/api-key`, {
+      headers,
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      if (response.status === 403) {
+        await csrfService.handleCSRFError()
+        return logSourceService.getLogSourceApiKey(id)
+      }
+      if (response.status === 404) {
+        throw new Error('Log source not found')
+      }
+      throw new Error('Failed to fetch API key')
+    }
+    return response.json()
   }
 } 
