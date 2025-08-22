@@ -36,6 +36,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
   }
 
   const isActivePath = (path: string): boolean => {
+    if (path === '/dashboard') {
+      return location.pathname.startsWith('/dashboard') && !location.pathname.startsWith('/dashboard/profile') && !location.pathname.startsWith('/dashboard/settings')
+    }
     return location.pathname === path
   }
 
