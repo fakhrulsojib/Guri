@@ -48,7 +48,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
         handleLogout={handleLogout}
       />
       
-      <div className="flex pt-20">
+      <div className="flex pt-20 min-w-[1100px]">
         <nav className={`w-64 min-h-screen ${isDark ? 'bg-gray-800' : 'bg-white'} border-r ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
           <div className="p-6">
             <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-6`}>
@@ -84,7 +84,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
           </div>
         </nav>
         
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-8 min-w-0">
           {children}
         </main>
       </div>

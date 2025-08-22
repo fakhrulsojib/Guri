@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from typing import Optional, List
 from enum import Enum
@@ -28,7 +28,28 @@ class LogSourceBase(BaseModel):
     description: Optional[str] = Field(None, max_length=500, description="Description of the log source")
     source_type: LogSourceType = Field(..., description="Type of log source (application, system, security, audit, performance, custom)")
     environment: Environment = Field(..., description="Environment (development, staging, production, testing)")
-    tags: List[str] = Field(default=[], description="Tags for categorization")
+    tags: List[str] = Field(default=[], max_items=10, description="Tags for categorization (max 10 tags)")
+
+    @field_validator('tags')
+    @classmethod
+    def validate_tags(cls, v):
+        if v is None:
+            return []
+        for tag in v:
+            if len(tag) > 20:
+                raise ValueError(f'Tag "{tag}" exceeds maximum length of 20 characters')
+            if not tag.strip():
+                raise ValueError('Tags cannot be empty or contain only whitespace')
+        
+        seen = set()
+        unique_tags = []
+        for tag in v:
+            trimmed_tag = tag.strip()
+            if trimmed_tag and trimmed_tag not in seen:
+                seen.add(trimmed_tag)
+                unique_tags.append(trimmed_tag)
+        
+        return unique_tags
 
 class LogSourceCreate(LogSourceBase):
     pass
@@ -40,6 +61,29 @@ class LogSourceUpdate(BaseModel):
     environment: Optional[Environment] = None
     tags: Optional[List[str]] = None
     status: Optional[LogSourceStatus] = None
+
+    @field_validator('tags')
+    @classmethod
+    def validate_tags(cls, v):
+        if v is None:
+            return v
+        if len(v) > 10:
+            raise ValueError('Maximum 10 tags allowed')
+        for tag in v:
+            if len(tag) > 20:
+                raise ValueError(f'Tag "{tag}" exceeds maximum length of 20 characters')
+            if not tag.strip():
+                raise ValueError('Tags cannot be empty or contain only whitespace')
+        
+        seen = set()
+        unique_tags = []
+        for tag in v:
+            trimmed_tag = tag.strip()
+            if trimmed_tag and trimmed_tag not in seen:
+                seen.add(trimmed_tag)
+                unique_tags.append(trimmed_tag)
+        
+        return unique_tags
 
 class LogSourceInDB(LogSourceBase):
     id: int = Field(..., description="Internal log source ID")

@@ -6,10 +6,14 @@ export interface LogSource {
   id: number
   name: string
   description: string
-  status: string
+  source_type: string
   environment: string
+  tags: string[]
+  status: string
   created_at: string
   updated_at: string
+  last_log_at?: string
+  log_count: number
 }
 
 export const logSourceService = {
@@ -48,7 +52,9 @@ export const logSourceService = {
         await csrfService.handleCSRFError()
         return logSourceService.createLogSource(logSourceData)
       }
-      throw new Error('Failed to create log source')
+      const error = new Error('Failed to create log source')
+      ;(error as any).response = response
+      throw error
     }
     return response.json()
   }

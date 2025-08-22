@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { logSourceService, LogSource } from '../services/logSourceService'
 import { useAppSelector } from '../store/hooks'
+import CreateLogSourceModal from '../components/CreateLogSourceModal'
+import { formatLogSourceType, formatEnvironment, formatStatus } from '../utils/formatters'
 
 interface LogSourcesPageProps {
   isDark: boolean
@@ -10,6 +12,7 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
   const [logSources, setLogSources] = useState<LogSource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     fetchLogSources()
@@ -29,7 +32,15 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
   }
 
   const handleCreateLogSource = () => {
-    // TODO: Implement log source creation form
+    setIsModalOpen(true)
+  }
+
+  const handleModalClose = () => {
+    setIsModalOpen(false)
+  }
+
+  const handleLogSourceCreated = () => {
+    fetchLogSources()
   }
 
   if (loading) {
@@ -100,10 +111,16 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
                     Name
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                    Type
+                  </th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Description
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Status
+                  </th>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                    Tags
                   </th>
                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Environment
@@ -120,7 +137,10 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
                       {logSource.name}
                     </td>
                     <td className={`px-4 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'} max-w-xs truncate`}>
-                      {logSource.description}
+                      {formatLogSourceType(logSource.source_type)}
+                    </td>
+                    <td className={`px-4 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'} max-w-xs truncate`}>
+                      {logSource.description || 'No description'}
                     </td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -128,11 +148,33 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {logSource.status}
+                        {formatStatus(logSource.status)}
                       </span>
                     </td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {logSource.tags && logSource.tags.length > 0 ? (
+                          logSource.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                isDark 
+                                  ? 'bg-gray-600 text-gray-200' 
+                                  : 'bg-gray-200 text-gray-700'
+                              }`}
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        ) : (
+                          <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                            No tags
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className={`px-4 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'} max-w-xs truncate`}>
-                      {logSource.environment}
+                      {formatEnvironment(logSource.environment)}
                     </td>
                     <td className={`px-4 py-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                       {new Date(logSource.created_at).toLocaleDateString()}
@@ -144,6 +186,13 @@ const LogSourcesPage: React.FC<LogSourcesPageProps> = ({ isDark }) => {
           </div>
         )}
       </div>
+
+      <CreateLogSourceModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleLogSourceCreated}
+        isDark={isDark}
+      />
     </div>
   )
 }
