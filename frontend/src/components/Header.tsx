@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { HeaderProps } from '../types'
 import { LightningIcon } from './icons'
 
@@ -11,14 +11,21 @@ const Header: React.FC<HeaderProps> = ({
   handleLogout
 }) => {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogoClick = (): void => {
     navigate('/')
   }
 
+  const handleDashboardClick = (): void => {
+    navigate('/dashboard')
+  }
+
+  const isOnDashboardPage = location.pathname.startsWith('/dashboard')
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 p-4 ${isDark ? 'bg-gray-900/80 backdrop-blur-sm' : 'bg-white/80 backdrop-blur-sm'}`}>
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <div className="w-full flex justify-between items-center">
         <button 
           onClick={handleLogoClick}
           className="flex items-center space-x-2 hover:opacity-80 transition-opacity duration-200 cursor-pointer"
@@ -36,6 +43,19 @@ const Header: React.FC<HeaderProps> = ({
               <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                 {user.name || user.email}
               </span>
+              {!isOnDashboardPage && (
+                <button
+                  onClick={handleDashboardClick}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    isDark 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                  aria-label="Navigate to dashboard"
+                >
+                  Dashboard
+                </button>
+              )}
               <button
                 onClick={handleLogout}
                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${

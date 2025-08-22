@@ -1,13 +1,14 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Header from './Header'
 import ThemeToggle from './ThemeToggle'
 import { DashboardLayoutProps, NavigationItem } from '../types'
-import { LogSourcesIcon, ProfileIcon, SettingsIcon } from './icons'
+import { LogSourcesIcon, ProfileIcon, SettingsIcon, ChevronLeftIcon, ChevronRightIcon } from './icons'
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, user, handleLogout }) => {
   const navigate = useNavigate()
   const location = useLocation()
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false)
 
   const navigationItems: NavigationItem[] = [
     { 
@@ -38,6 +39,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
     return location.pathname === path
   }
 
+  const toggleNav = (): void => {
+    setIsNavCollapsed(!isNavCollapsed)
+  }
+
   return (
     <div className={`min-h-screen min-w-[1100px] ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
       <Header 
@@ -49,11 +54,31 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
       />
       
       <div className="flex pt-20 min-w-[1100px]">
-        <nav className={`w-64 min-h-screen ${isDark ? 'bg-gray-800' : 'bg-white'} border-r ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-          <div className="p-6">
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-6`}>
-              Dashboard
-            </h2>
+        <nav className={`${isNavCollapsed ? 'w-16' : 'w-56'} min-h-screen ${isDark ? 'bg-gray-800' : 'bg-white'} border-r ${isDark ? 'border-gray-700' : 'border-gray-200'} transition-all duration-300 relative`}>
+          <div className={`${isNavCollapsed ? 'p-3' : 'p-6'}`}>
+            <div className="flex items-center justify-between mb-6">
+              {!isNavCollapsed && (
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Dashboard
+                </h2>
+              )}
+              <button
+                onClick={toggleNav}
+                className={`p-1 rounded-md transition-colors duration-200 ${
+                  isDark 
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+                aria-label={isNavCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+                title={isNavCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+              >
+                {isNavCollapsed ? (
+                  <ChevronRightIcon className="w-4 h-4" />
+                ) : (
+                  <ChevronLeftIcon className="w-4 h-4" />
+                )}
+              </button>
+            </div>
             <ul className="space-y-2">
               {navigationItems.map((item: NavigationItem) => {
                 const isActive = isActivePath(item.path)
@@ -62,7 +87,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
                   <li key={item.path}>
                     <button
                       onClick={() => handleNavigation(item.path)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                      className={`w-full flex items-center ${isNavCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                         isActive
                           ? isDark
                             ? 'bg-blue-600 text-white'
@@ -72,10 +97,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
                             : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                       aria-label={`Navigate to ${item.name}`}
-                      title={item.description}
+                      title={isNavCollapsed ? item.description : undefined}
                     >
-                      <IconComponent className="w-5 h-5" />
-                      <span className="font-medium">{item.name}</span>
+                      <div className={`${isNavCollapsed ? 'w-5 h-5 rounded-lg flex items-center justify-center' : ''}`}>
+                        <IconComponent className="w-5 h-5" />
+                      </div>
+                      {!isNavCollapsed && (
+                        <span className="font-medium">{item.name}</span>
+                      )}
                     </button>
                   </li>
                 )
