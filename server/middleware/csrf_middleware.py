@@ -18,6 +18,10 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         
     async def dispatch(self, request: Request, call_next):
         try:
+            # Skip CSRF for log ingestion endpoints
+            if request.url.path.startswith("/api/v1/logs"):
+                return await call_next(request)
+                
             if request.method in ["GET", "HEAD", "OPTIONS"]:
                 response = await call_next(request)
                 if request.method == "GET":

@@ -7,6 +7,9 @@ from model.log_sources import LogSourceStatus
 from services.log_source_service import LogSourceService
 import structlog
 
+# Note: This router is intentionally public and does not require authentication or CSRF tokens
+# It's designed for log ingestion from external systems and applications
+
 logger = structlog.get_logger()
 
 log_router = APIRouter(
