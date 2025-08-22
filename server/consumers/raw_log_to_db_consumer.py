@@ -18,6 +18,13 @@ INSERT INTO raw_logs (source_id, level, message, data, metadata, timestamp, trac
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
 """
 
+UPDATE_LOG_COUNT_SQL = """
+UPDATE log_sources 
+SET log_count = log_count + 1, 
+    last_log_at = GREATEST(COALESCE(last_log_at, %s), %s)
+WHERE id = %s;
+"""
+
 class RawLogToDBConsumer:
     def __init__(self):
         self._running = False
@@ -83,6 +90,13 @@ class RawLogToDBConsumer:
                     )
                     
                     execute_query(INSERT_LOG_SQL, params)
+                    
+                    try:
+                        execute_query(UPDATE_LOG_COUNT_SQL, (log.timestamp, log.timestamp, source_id))
+                        logger.info("Log count updated", source_id=source_id)
+                    except Exception as e:
+                        logger.error("Failed to update log count", source_id=source_id, error=str(e))
+                    
                     logger.info("Log saved to database", log_data=log.model_dump(), source_id=source_id)
                 except Exception as e:
                     logger.error("Failed to save log to database", error=str(e))
