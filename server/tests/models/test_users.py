@@ -87,7 +87,7 @@ def get_test_google_auth_request() -> Dict[str, Any]:
         "id_token": "google_id_token_123",
         "access_token": "google_access_token_456",
         "authorization_code": "auth_code_789",
-        "redirect_uri": "http://localhost:8000/auth/google/callback"
+        "redirect_uri": "https://fakhrulsojib.mooo.com/auth/google/callback"
     }
 
 # Alternative test users for different scenarios

@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Request
-from fastapi.security import HTTPBearer
+import os
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from threading import Thread
 import secrets
-import os
+import structlog
+
 from routers.health_router import health_router
 from routers.log_router import log_router
 from routers.auth_router import auth_router
@@ -18,19 +18,20 @@ from database.database import check_database_connection
 from util.logging_config import setup_logging
 from middleware.logging_middleware import LoggingMiddleware
 from middleware.csrf_middleware import CSRFMiddleware
-import structlog
+from middleware.proxy_middleware import ProxyMiddleware
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://fakhrulsojib.mooo.com")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_FORMAT = os.getenv("LOG_FORMAT", "json")
+LOG_DIR = os.getenv("LOG_DIR", "logs/backend")
+DISABLE_CSRF_FOR_TESTS = os.getenv("DISABLE_CSRF_FOR_TESTS", "0")
+CSRF_SECRET_KEY = os.getenv("CSRF_SECRET_KEY", secrets.token_hex(32))
 
 logger = structlog.get_logger()
 
-security_scheme = HTTPBearer()
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    log_level = os.environ.get("LOG_LEVEL", "INFO")
-    log_format = os.environ.get("LOG_FORMAT", "json")
-    log_dir = os.environ.get("LOG_DIR", "logs/backend")
-    
-    setup_logging(log_level, log_format, log_dir)
+    setup_logging(LOG_LEVEL, LOG_FORMAT, LOG_DIR)
     
     logger.info("Starting application", app_name="Pulse AI")
     
@@ -68,12 +69,18 @@ app = FastAPI(
         {"name": "log-sources", "description": "Log source management endpoints"},
         {"name": "logs", "description": "Log management endpoints"},
         {"name": "health", "description": "Health check endpoints"}
-    ]
+    ],
+    root_path="",
+    docs_url="/docs",
+    openapi_url="/openapi.json"
 )
 
+app.root_path = ""
+
+app.add_middleware(ProxyMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,9 +89,8 @@ app.add_middleware(
 
 app.add_middleware(LoggingMiddleware)
 
-if os.getenv("DISABLE_CSRF_FOR_TESTS") != "1":
-    secret_key = os.getenv("CSRF_SECRET_KEY", secrets.token_hex(32))
-    app.add_middleware(CSRFMiddleware, secret_key=secret_key)
+if DISABLE_CSRF_FOR_TESTS != "1":
+    app.add_middleware(CSRFMiddleware, secret_key=CSRF_SECRET_KEY)
 
 app.include_router(health_router)
 app.include_router(log_router)

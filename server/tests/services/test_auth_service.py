@@ -29,7 +29,7 @@ class TestAuthService:
         mock_create_user.return_value = mock_user_db_result
         mock_store_token.return_value = {"id": 1}
         
-        result = await AuthService.authenticate_with_authorization_code("fake_auth_code", "http://localhost:8000/auth/callback")
+        result = await AuthService.authenticate_with_authorization_code("fake_auth_code", "https://fakhrulsojib.mooo.com/auth/callback")
         
         assert hasattr(result, "access_token")
         assert hasattr(result, "refresh_token")
@@ -58,7 +58,7 @@ class TestAuthService:
         mock_get_user.return_value = mock_user_db_result
         mock_store_token.return_value = {"id": 1}
         
-        result = await AuthService.authenticate_with_authorization_code("fake_auth_code", "http://localhost:8000/auth/callback")
+        result = await AuthService.authenticate_with_authorization_code("fake_auth_code", "https://fakhrulsojib.mooo.com/auth/callback")
         
         assert hasattr(result, "access_token")
         assert hasattr(result, "refresh_token")
@@ -69,4 +69,4 @@ class TestAuthService:
         mock_exchange_tokens.side_effect = Exception("Invalid code")
         
         with pytest.raises(Exception):
-            await AuthService.authenticate_with_authorization_code("invalid_code", "http://localhost:8000/auth/callback") 
+            await AuthService.authenticate_with_authorization_code("invalid_code", "https://fakhrulsojib.mooo.com/auth/callback") 

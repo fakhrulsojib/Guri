@@ -5,12 +5,12 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import structlog
 
-logger = structlog.get_logger()
-
 PG_HOST = os.environ.get("POSTGRES_HOST", "db")
 PG_DB = os.environ.get("POSTGRES_DB", "postgres")
 PG_USER = os.environ.get("POSTGRES_USER", "postgres")
 PG_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "password69")
+
+logger = structlog.get_logger()
 
 def get_connection():
     return psycopg2.connect(

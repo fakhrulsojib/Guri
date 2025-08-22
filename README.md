@@ -78,8 +78,8 @@ docker exec postgres_db psql -U postgres -d fastapi_db -c "\dt"
 
 ## 🔧 Service Ports
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **Kafka UI**: http://localhost:8080
-- **PostgreSQL**: localhost:5432
-- **ChromaDB**: http://localhost:8001
+- **Frontend**: https://fakhrulsojib.mooo.com (via Nginx proxy)
+- **Backend API**: https://fakhrulsojib.mooo.com (via Nginx proxy)
+- **Kafka UI**: https://fakhrulsojib.mooo.com:8080
+- **PostgreSQL**: fakhrulsojib.mooo.com:5432
+- **ChromaDB**: https://fakhrulsojib.mooo.com:8001

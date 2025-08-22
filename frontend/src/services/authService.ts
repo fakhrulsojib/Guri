@@ -1,4 +1,4 @@
-const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://fakhrulsojib.mooo.com'
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '105760145216-7ub4ppuqp57j6anc608t3ke2r0pmk1md.apps.googleusercontent.com'
 
 import { csrfService } from './csrfService'

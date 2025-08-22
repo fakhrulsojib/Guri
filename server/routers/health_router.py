@@ -14,8 +14,6 @@ async def health_check():
     try:
         logger.info("Health check requested")
         
-        # Basic health check - just return success
-        # Don't check database here to avoid 500 errors
         return JSONResponse(
             content={"status": "healthy", "message": "Service is running"},
             status_code=200,

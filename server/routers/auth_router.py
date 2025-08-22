@@ -6,14 +6,11 @@ import structlog
 from services.auth_service import AuthService
 from util.jwt_utils import JWTConfig
 
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
-COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", "localhost")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://fakhrulsojib.mooo.com/auth/google/callback")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://fakhrulsojib.mooo.com")
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", "fakhrulsojib.mooo.com")
 
-from model.user import (
-    TokenResponse, 
-    UserResponse
-)
+from model.user import TokenResponse, UserResponse
 
 logger = structlog.get_logger()
 
@@ -49,7 +46,7 @@ async def google_oauth_callback(
             key="access_token",
             value=auth_response.access_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
+            secure=True,
             samesite="lax",
             max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             path="/",
@@ -59,7 +56,7 @@ async def google_oauth_callback(
             key="refresh_token",
             value=auth_response.refresh_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
+            secure=True,
             samesite="lax",
             max_age=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             path="/auth/refresh",
@@ -74,11 +71,8 @@ async def google_oauth_callback(
         frontend_redirect = state if state else FRONTEND_URL
         return RedirectResponse(url=f"{frontend_redirect}?error=auth_failed")
 
-
-
 @auth_router.post("/refresh")
 async def refresh_token(request: Request):
-    """Refresh access token using refresh token from cookies"""
     try:
         refresh_token = request.cookies.get("refresh_token")
         if not refresh_token:
@@ -98,7 +92,7 @@ async def refresh_token(request: Request):
             key="access_token",
             value=new_tokens["access_token"],
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
+            secure=True,
             samesite="lax",
             max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             path="/",

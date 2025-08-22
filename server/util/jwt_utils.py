@@ -8,15 +8,21 @@ import structlog
 
 from database.UserCrud import RefreshTokenCRUD
 
+JWT_SECRET = os.getenv("JWT_SECRET", "")
+ACCESS_TOKEN_EXPIRE_MINUTES = 10
+REFRESH_TOKEN_EXPIRE_DAYS = 30
+TOKEN_TYPE_ACCESS = "access"
+TOKEN_TYPE_REFRESH = "refresh"
+
 logger = structlog.get_logger()
 
 class JWTConfig:
-    SECRET_KEY: str = os.getenv("JWT_SECRET", "")
+    SECRET_KEY: str = JWT_SECRET
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
-    TOKEN_TYPE_ACCESS: str = "access"
-    TOKEN_TYPE_REFRESH: str = "refresh"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = ACCESS_TOKEN_EXPIRE_MINUTES
+    REFRESH_TOKEN_EXPIRE_DAYS: int = REFRESH_TOKEN_EXPIRE_DAYS
+    TOKEN_TYPE_ACCESS: str = TOKEN_TYPE_ACCESS
+    TOKEN_TYPE_REFRESH: str = TOKEN_TYPE_REFRESH
     
     @classmethod
     def validate_config(cls):

@@ -252,7 +252,7 @@ class TestGoogleOAuthUtils:
                     }
 
                     result = await GoogleOAuthUtils.exchange_code_for_tokens(
-                        'fake_auth_code', 'http://localhost/callback'
+                        'fake_auth_code', 'https://fakhrulsojib.mooo.com/callback'
                     )
 
         assert result['access_token'] == mock_token_exchange_response['access_token']
@@ -272,7 +272,7 @@ class TestGoogleOAuthUtils:
 
         with pytest.raises(HTTPException) as exc_info:
             await GoogleOAuthUtils.exchange_code_for_tokens(
-                'invalid_code', 'http://localhost/callback'
+                'invalid_code', 'https://fakhrulsojib.mooo.com/callback'
             )
 
         assert exc_info.value.status_code == 400
@@ -284,7 +284,7 @@ class TestGoogleOAuthUtils:
 
         with pytest.raises(HTTPException) as exc_info:
             await GoogleOAuthUtils.exchange_code_for_tokens(
-                'fake_code', 'http://localhost/callback'
+                'fake_code', 'https://fakhrulsojib.mooo.com/callback'
             )
 
         assert exc_info.value.status_code == 500
@@ -296,7 +296,7 @@ class TestGoogleOAuthUtils:
 
         with pytest.raises(HTTPException) as exc_info:
             await GoogleOAuthUtils.exchange_code_for_tokens(
-                'fake_code', 'http://localhost/callback'
+                'fake_code', 'https://fakhrulsojib.mooo.com/callback'
             )
 
         assert exc_info.value.status_code == 400

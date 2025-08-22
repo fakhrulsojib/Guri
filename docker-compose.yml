@@ -4,8 +4,8 @@ services:
                         context: .
                         dockerfile: Dockerfile
                 container_name: fastapi_server
-                ports:
-                        - "8000:8000"
+                expose:
+                        - "8000"
                 volumes:
                         - ./server:/app
                         - ./chroma_data:/app/chroma_data
@@ -46,7 +46,10 @@ services:
                         - app_network
                 stdin_open: true
                 tty: true
-                command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+                user: root
+                command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+                expose:
+                        - "3000"
 
         zookeeper:
                 image: confluentinc/cp-zookeeper:7.5.3
@@ -74,7 +77,7 @@ services:
                         KAFKA_BROKER_ID: 1
                         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
                         KAFKA_LISTENERS: PLAINTEXT://:9092,BROKER://:9093
-                        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,BROKER://kafka:9093
+                        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://fakhrulsojib.mooo.com:9092,BROKER://kafka:9093
                         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,BROKER:PLAINTEXT
                         KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
                         KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -120,9 +123,23 @@ services:
                 volumes:
                         - chroma_volume:/chroma/chroma
                 environment:
-                        # CHROMA_SERVER_HOST: 0.0.0.0 # This is often default or not needed if container network is set up
-                        # CHROMA_SERVER_PORT: 8000 # This is the default internal port
                         IS_PERSISTENT: "TRUE"
+                networks:
+                        - app_network
+
+        nginx:
+                image: nginx:alpine
+                container_name: nginx_proxy
+                ports:
+                        - "80:80"
+                        - "443:443"
+                volumes:
+                        - ./nginx.conf:/etc/nginx/nginx.conf:ro
+                        - ./certbot/conf:/etc/letsencrypt
+                        - ./certbot/www:/var/www/certbot
+                depends_on:
+                        - frontend
+                        - backend
                 networks:
                         - app_network
 
