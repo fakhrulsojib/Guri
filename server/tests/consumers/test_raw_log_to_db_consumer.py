@@ -26,17 +26,26 @@ def test_consumer_processes_valid_log(mock_execute_query, mock_kafka_consumer, m
     except KeyboardInterrupt:
         pass
 
-    mock_execute_query.assert_called_once()
-    call_args = mock_execute_query.call_args
-    sql_query = call_args[0][0]
-    params = call_args[0][1]
+    assert mock_execute_query.call_count == 2
     
-    assert "INSERT INTO raw_logs" in sql_query
-    assert "source_id" in sql_query
-    assert "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)" in sql_query
+    first_call_args = mock_execute_query.call_args_list[0]
+    first_sql_query = first_call_args[0][0]
+    first_params = first_call_args[0][1]
     
-    assert params[0] == mock_raw_log_with_source_id["source_id"]
-    assert len(params) == 8
+    assert "INSERT INTO raw_logs" in first_sql_query
+    assert "source_id" in first_sql_query
+    assert "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)" in first_sql_query
+    
+    assert first_params[0] == mock_raw_log_with_source_id["source_id"]
+    assert len(first_params) == 8
+    
+    second_call_args = mock_execute_query.call_args_list[1]
+    second_sql_query = second_call_args[0][0]
+    second_params = second_call_args[0][1]
+    
+    assert "UPDATE log_sources" in second_sql_query
+    assert "log_count = log_count + 1" in second_sql_query
+    assert "last_log_at" in second_sql_query
 
 @patch(f'{CONSUMER_MODULE}.Consumer')
 @patch(f'{CONSUMER_MODULE}.execute_query')
@@ -164,7 +173,7 @@ def test_consumer_processes_minimal_log(mock_execute_query, mock_kafka_consumer)
     except KeyboardInterrupt:
         pass
 
-    mock_execute_query.assert_called_once()
+    assert mock_execute_query.call_count == 2
 
 @patch(f'{CONSUMER_MODULE}.Consumer')
 @patch(f'{CONSUMER_MODULE}.execute_query')
@@ -192,7 +201,7 @@ def test_consumer_processes_log_with_trace_ids(mock_execute_query, mock_kafka_co
     except KeyboardInterrupt:
         pass
 
-    mock_execute_query.assert_called_once()
+    assert mock_execute_query.call_count == 2
 
 @patch(f'{CONSUMER_MODULE}.Consumer')
 @patch(f'{CONSUMER_MODULE}.execute_query')
@@ -216,14 +225,25 @@ def test_consumer_handles_log_with_api_key_field(mock_execute_query, mock_kafka_
     except KeyboardInterrupt:
         pass
 
-    mock_execute_query.assert_called_once()
-    call_args = mock_execute_query.call_args
-    sql_query = call_args[0][0]
-    params = call_args[0][1]
+    assert mock_execute_query.call_count == 2
     
-    assert "INSERT INTO raw_logs" in sql_query
-    assert "source_id" in sql_query
-    assert "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)" in sql_query
+    # Check first call (INSERT into raw_logs)
+    first_call_args = mock_execute_query.call_args_list[0]
+    first_sql_query = first_call_args[0][0]
+    first_params = first_call_args[0][1]
     
-    assert params[0] == mock_raw_log_with_source_id["source_id"]
-    assert len(params) == 8
+    assert "INSERT INTO raw_logs" in first_sql_query
+    assert "source_id" in first_sql_query
+    assert "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)" in first_sql_query
+    
+    assert first_params[0] == mock_raw_log_with_source_id["source_id"]
+    assert len(first_params) == 8
+    
+    # Check second call (UPDATE log_sources)
+    second_call_args = mock_execute_query.call_args_list[1]
+    second_sql_query = second_call_args[0][0]
+    second_params = second_call_args[0][1]
+    
+    assert "UPDATE log_sources" in second_sql_query
+    assert "log_count = log_count + 1" in second_sql_query
+    assert "last_log_at" in second_sql_query

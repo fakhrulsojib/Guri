@@ -1,5 +1,3 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://fakhrulsojib.mooo.com'
-
 import { csrfService } from './csrfService'
 
 export interface LogSource {
@@ -20,7 +18,7 @@ export const logSourceService = {
   getLogSources: async (): Promise<LogSource[]> => {
     const headers = await csrfService.getHeaders()
     
-    const response = await fetch(`${BACKEND_URL}/api/v1/log-sources`, {
+    const response = await fetch(`/api/v1/log-sources`, {
       headers,
       credentials: 'include'
     })
@@ -40,7 +38,7 @@ export const logSourceService = {
       'Content-Type': 'application/json'
     })
     
-    const response = await fetch(`${BACKEND_URL}/api/v1/log-sources`, {
+    const response = await fetch(`/api/v1/log-sources`, {
       method: 'POST',
       headers,
       credentials: 'include',
@@ -62,7 +60,7 @@ export const logSourceService = {
   getLogSource: async (id: number): Promise<LogSource> => {
     const headers = await csrfService.getHeaders()
     
-    const response = await fetch(`${BACKEND_URL}/api/v1/log-sources/${id}`, {
+    const response = await fetch(`/api/v1/log-sources/${id}`, {
       headers,
       credentials: 'include'
     })
@@ -83,7 +81,7 @@ export const logSourceService = {
   getLogSourceApiKey: async (id: number): Promise<{ api_key: string }> => {
     const headers = await csrfService.getHeaders()
     
-    const response = await fetch(`${BACKEND_URL}/api/v1/log-sources/${id}/api-key`, {
+    const response = await fetch(`/api/v1/log-sources/${id}/api-key`, {
       headers,
       credentials: 'include'
     })
@@ -106,7 +104,7 @@ export const logSourceService = {
       'Content-Type': 'application/json'
     })
     
-    const response = await fetch(`${BACKEND_URL}/api/v1/log-sources/${id}`, {
+    const response = await fetch(`/api/v1/log-sources/${id}`, {
       method: 'PATCH',
       headers,
       credentials: 'include',

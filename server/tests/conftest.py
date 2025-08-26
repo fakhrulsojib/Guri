@@ -1,6 +1,9 @@
+import os
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
+
+test_origins = os.getenv("TEST_CORS_ORIGINS", "http://localhost:3000").split(",")
 
 # Import all test model fixtures
 from tests.models.test_users import (
@@ -51,7 +54,7 @@ def client():
     
     test_app.add_middleware(
         CORSMiddleware,
-        allow_origins=["https://fakhrulsojib.mooo.com"],
+        allow_origins=test_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -1,5 +1,8 @@
+import os
 from datetime import datetime, timezone
 from typing import Dict, Any
+
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 
 # Test User Data Fixtures
 def get_test_user_base() -> Dict[str, Any]:
@@ -87,7 +90,7 @@ def get_test_google_auth_request() -> Dict[str, Any]:
         "id_token": "google_id_token_123",
         "access_token": "google_access_token_456",
         "authorization_code": "auth_code_789",
-        "redirect_uri": "https://fakhrulsojib.mooo.com/auth/google/callback"
+        "redirect_uri": GOOGLE_REDIRECT_URI
     }
 
 # Alternative test users for different scenarios

@@ -20,7 +20,7 @@ from middleware.logging_middleware import LoggingMiddleware
 from middleware.csrf_middleware import CSRFMiddleware
 from middleware.proxy_middleware import ProxyMiddleware
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://fakhrulsojib.mooo.com")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FORMAT = os.getenv("LOG_FORMAT", "json")
 LOG_DIR = os.getenv("LOG_DIR", "logs/backend")

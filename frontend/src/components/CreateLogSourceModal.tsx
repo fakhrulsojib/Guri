@@ -145,6 +145,8 @@ const CreateLogSourceModal: React.FC<CreateLogSourceModalProps> = ({
       }
       
       onSuccess()
+      onClose()
+      resetForm()
     } catch (err: any) {
       setError(err.message || 'Failed to save log source')
     } finally {
@@ -223,7 +225,7 @@ const CreateLogSourceModal: React.FC<CreateLogSourceModalProps> = ({
           <h2 className={`text-xl font-semibold ${
             isDark ? 'text-white' : 'text-gray-900'
           }`}>
-            Create Log Source
+            {editMode ? 'Edit Log Source' : 'Create Log Source'}
           </h2>
         </div>
 

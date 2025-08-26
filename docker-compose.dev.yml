@@ -1,0 +1,155 @@
+services:
+        backend:
+                build:
+                        context: .
+                        dockerfile: Dockerfile
+                container_name: fastapi_server_dev
+                expose:
+                        - "8000"
+                ports:
+                        - "8000:8000"
+                volumes:
+                        - ./server:/app
+                        - ./chroma_data:/app/chroma_data
+                        - ./logs/backend:/app/logs/backend
+                command: >
+                        uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+                env_file:
+                        - .env.development
+                depends_on:
+                        - kafka
+                        - db
+                        - chroma
+                networks:
+                        - app_network
+                logging:
+                        driver: "json-file"
+                        options:
+                                max-size: "10m"
+                                max-file: "3"
+                environment:
+                        - LOG_LEVEL=INFO
+                        - LOG_FORMAT=json
+                        - LOG_DIR=/app/logs/backend
+                        - LOG_RETENTION_DAYS=30
+
+        frontend:
+                image: node:18-alpine
+                container_name: vite_frontend_dev
+                ports:
+                        - "3000:3000"
+                volumes:
+                        - ./frontend:/app
+                        - /app/node_modules
+                working_dir: /app
+                environment:
+                        - NODE_ENV=development
+                        - VITE_MODE=development
+                networks:
+                        - app_network
+                stdin_open: true
+                tty: true
+                user: root
+                command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+                expose:
+                        - "3000"
+
+        nginx:
+                image: nginx:alpine
+                container_name: nginx_proxy_dev
+                ports:
+                        - "8081:80"
+                volumes:
+                        - ./nginx.conf.dev:/etc/nginx/nginx.conf:ro
+                depends_on:
+                        - frontend
+                        - backend
+                networks:
+                        - app_network
+
+        zookeeper:
+                image: confluentinc/cp-zookeeper:7.5.3
+                container_name: zookeeper_dev
+                ports:
+                        - "2181:2181"
+                environment:
+                        ZOOKEEPER_CLIENT_PORT: 2181
+                        ZOOKEEPER_TICK_TIME: 2000
+                volumes:
+                        - zookeeper_data_dev:/var/lib/zookeeper/data
+                        - zookeeper_log_dev:/var/lib/zookeeper/log
+                networks:
+                        - app_network
+
+        kafka:
+                image: confluentinc/cp-kafka:7.5.3
+                container_name: kafka_dev
+                ports:
+                        - "9092:9092"
+                        - "9093:9093"
+                depends_on:
+                        - zookeeper
+                environment:
+                        KAFKA_BROKER_ID: 1
+                        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+                        KAFKA_LISTENERS: PLAINTEXT://:9092,BROKER://:9093
+                        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,BROKER://kafka:9093
+                        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,BROKER:PLAINTEXT
+                        KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+                        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+                        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+                volumes:
+                        - kafka_data_dev:/var/lib/kafka/data
+                networks:
+                        - app_network
+
+        kafka-ui:
+                image: provectuslabs/kafka-ui:latest
+                container_name: kafka_ui_dev
+                ports:
+                        - "8080:8080"
+                depends_on:
+                        - kafka
+                environment:
+                        KAFKA_CLUSTERS_0_NAME: local-kafka
+                        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+                        KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+                networks:
+                        - app_network
+
+        db:
+                image: postgres:13-alpine
+                container_name: postgres_db_dev
+                ports:
+                        - "5432:5432"
+                environment:
+                        POSTGRES_DB: ${POSTGRES_DB:-fastapi_db}
+                        POSTGRES_USER: ${POSTGRES_USER:-user}
+                        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+                volumes:
+                        - postgres_data_dev:/var/lib/postgresql/data
+                networks:
+                        - app_network
+
+        chroma:
+                image: chromadb/chroma:latest
+                container_name: chromadb_server_dev
+                ports:
+                        - "8001:8000"
+                volumes:
+                        - chroma_volume_dev:/chroma/chroma
+                environment:
+                        IS_PERSISTENT: "TRUE"
+                networks:
+                        - app_network
+
+volumes:
+        zookeeper_data_dev:
+        zookeeper_log_dev:
+        kafka_data_dev:
+        postgres_data_dev:
+        chroma_volume_dev:
+
+networks:
+        app_network:
+                driver: bridge 

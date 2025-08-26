@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Running tests with coverage..."
-docker exec fastapi_server bash -c "cd /app && python -m pytest tests/ --cov=. --cov-report=term-missing --cov-report=html -v"
+docker exec fastapi_server_dev bash -c "cd /app && python -m pytest tests/ --cov=. --cov-report=term-missing --cov-report=html -v"
 
 echo ""
 echo "Coverage report generated in htmlcov/index.html"

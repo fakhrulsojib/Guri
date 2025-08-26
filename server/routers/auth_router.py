@@ -6,9 +6,9 @@ import structlog
 from services.auth_service import AuthService
 from util.jwt_utils import JWTConfig
 
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://fakhrulsojib.mooo.com/auth/google/callback")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://fakhrulsojib.mooo.com")
-COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", "fakhrulsojib.mooo.com")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN")
 
 from model.user import TokenResponse, UserResponse
 
@@ -42,25 +42,29 @@ async def google_oauth_callback(
         
         response = RedirectResponse(url=f"{FRONTEND_URL}?auth=success")
         
+        cookie_kwargs = {}
+        if COOKIE_DOMAIN:
+            cookie_kwargs["domain"] = COOKIE_DOMAIN
+            
         response.set_cookie(
             key="access_token",
             value=auth_response.access_token,
             httponly=True,
-            secure=True,
+            secure=False,
             samesite="lax",
             max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             path="/",
-            domain=COOKIE_DOMAIN
+            **cookie_kwargs
         )
         response.set_cookie(
             key="refresh_token",
             value=auth_response.refresh_token,
             httponly=True,
-            secure=True,
+            secure=False,
             samesite="lax",
             max_age=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             path="/auth/refresh",
-            domain=COOKIE_DOMAIN
+            **cookie_kwargs
         )
         
         logger.info("OAuth callback successful, cookies set, redirecting to frontend")
@@ -88,15 +92,19 @@ async def refresh_token(request: Request):
             media_type="application/json"
         )
         
+        cookie_kwargs = {}
+        if COOKIE_DOMAIN:
+            cookie_kwargs["domain"] = COOKIE_DOMAIN
+            
         response_obj.set_cookie(
             key="access_token",
             value=new_tokens["access_token"],
             httponly=True,
-            secure=True,
+            secure=False,
             samesite="lax",
             max_age=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             path="/",
-            domain=COOKIE_DOMAIN
+            **cookie_kwargs
         )
         
         return response_obj
@@ -122,16 +130,20 @@ async def logout(request: Request):
         
         response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
         
-        response_obj.delete_cookie("access_token", path="/", domain=COOKIE_DOMAIN)
-        response_obj.delete_cookie("refresh_token", path="/auth/refresh", domain=COOKIE_DOMAIN)
+        cookie_kwargs = {}
+        if COOKIE_DOMAIN:
+            cookie_kwargs["domain"] = COOKIE_DOMAIN
+            
+        response_obj.delete_cookie("access_token", path="/", **cookie_kwargs)
+        response_obj.delete_cookie("refresh_token", path="/auth/refresh", **cookie_kwargs)
         
         return response_obj
     
     except Exception as e:
         response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
         
-        response_obj.delete_cookie("access_token", path="/", domain=COOKIE_DOMAIN)
-        response_obj.delete_cookie("refresh_token", path="/auth/refresh", domain=COOKIE_DOMAIN)
+        response_obj.delete_cookie("access_token", path="/", **cookie_kwargs)
+        response_obj.delete_cookie("refresh_token", path="/auth/refresh", **cookie_kwargs)
         
         return response_obj
 

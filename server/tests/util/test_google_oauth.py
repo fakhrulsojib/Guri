@@ -1,3 +1,4 @@
+import os
 import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
 from fastapi import HTTPException
@@ -5,6 +6,8 @@ from google.auth.exceptions import GoogleAuthError
 import httpx
 
 from util.google_oauth import GoogleOAuthUtils, GoogleOAuthConfig
+
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 
 @pytest.fixture
 def mock_google_token_data():
@@ -252,7 +255,7 @@ class TestGoogleOAuthUtils:
                     }
 
                     result = await GoogleOAuthUtils.exchange_code_for_tokens(
-                        'fake_auth_code', 'https://fakhrulsojib.mooo.com/callback'
+                        'fake_auth_code', GOOGLE_REDIRECT_URI
                     )
 
         assert result['access_token'] == mock_token_exchange_response['access_token']
@@ -272,7 +275,7 @@ class TestGoogleOAuthUtils:
 
         with pytest.raises(HTTPException) as exc_info:
             await GoogleOAuthUtils.exchange_code_for_tokens(
-                'invalid_code', 'https://fakhrulsojib.mooo.com/callback'
+                'invalid_code', GOOGLE_REDIRECT_URI
             )
 
         assert exc_info.value.status_code == 400
@@ -284,7 +287,7 @@ class TestGoogleOAuthUtils:
 
         with pytest.raises(HTTPException) as exc_info:
             await GoogleOAuthUtils.exchange_code_for_tokens(
-                'fake_code', 'https://fakhrulsojib.mooo.com/callback'
+                'fake_code', GOOGLE_REDIRECT_URI
             )
 
         assert exc_info.value.status_code == 500
@@ -296,7 +299,7 @@ class TestGoogleOAuthUtils:
 
         with pytest.raises(HTTPException) as exc_info:
             await GoogleOAuthUtils.exchange_code_for_tokens(
-                'fake_code', 'https://fakhrulsojib.mooo.com/callback'
+                'fake_code', GOOGLE_REDIRECT_URI
             )
 
         assert exc_info.value.status_code == 400
