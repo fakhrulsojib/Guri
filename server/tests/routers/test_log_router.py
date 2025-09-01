@@ -8,11 +8,13 @@ SINGLE_LOG_API_ENDPOINT = "/api/v1/logs"
 
 client = TestClient(app)
 
-@patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.producer")
-def test_log_accepts_valid_json(mock_producer, mock_get_source, mock_log_source, mock_raw_log):
+@patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
+def test_log_accepts_valid_json(mock_get_source, mock_producer, mock_redis_cache, mock_log_source, mock_raw_log):
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_log_source)
+    mock_redis_cache.return_value = None
     mock_get_source.return_value = log_source_obj
     
     mock_producer.produce = MagicMock()
@@ -29,11 +31,13 @@ def test_log_accepts_valid_json(mock_producer, mock_get_source, mock_log_source,
     assert kafka_value['source_id'] == mock_log_source["id"]
     assert 'api_key' not in kafka_value
 
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.producer")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_accepts_minimal_data(mock_get_source, mock_producer, mock_log_source, mock_raw_log_minimal):
+def test_log_accepts_minimal_data(mock_get_source, mock_producer, mock_redis_cache, mock_log_source, mock_raw_log_minimal):
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_log_source)
+    mock_redis_cache.return_value = None
     mock_get_source.return_value = log_source_obj
     
     mock_producer.produce = MagicMock()
@@ -81,9 +85,11 @@ def test_log_rejects_invalid_api_key(mock_producer, mock_raw_log):
     assert response.status_code == 422
 
 @patch("routers.log_router.producer")
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_rejects_nonexistent_api_key(mock_get_source, mock_producer, mock_raw_log):
+def test_log_rejects_nonexistent_api_key(mock_get_source, mock_redis_cache, mock_producer, mock_raw_log):
     """Test that logs with non-existent API keys are rejected"""
+    mock_redis_cache.return_value = None
     mock_get_source.return_value = None
     
     response = client.post(SINGLE_LOG_API_ENDPOINT, json=mock_raw_log)
@@ -91,9 +97,11 @@ def test_log_rejects_nonexistent_api_key(mock_get_source, mock_producer, mock_ra
     assert "Invalid API key" in response.json()["detail"]
 
 @patch("routers.log_router.producer")
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_rejects_inactive_log_source(mock_get_source, mock_producer, mock_inactive_log_source, mock_raw_log):
+def test_log_rejects_inactive_log_source(mock_get_source, mock_redis_cache, mock_producer, mock_inactive_log_source, mock_raw_log):
     """Test that logs from inactive log sources are rejected"""
+    mock_redis_cache.return_value = None
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_inactive_log_source)
     mock_get_source.return_value = log_source_obj
@@ -109,11 +117,13 @@ def test_log_rejects_invalid_level(mock_producer, mock_raw_log):
     response = client.post(SINGLE_LOG_API_ENDPOINT, json=invalid_data)
     assert response.status_code == 422
 
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.producer")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_accepts_all_valid_levels(mock_get_source, mock_producer, mock_log_source):
+def test_log_accepts_all_valid_levels(mock_get_source, mock_producer, mock_redis_cache, mock_log_source):
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_log_source)
+    mock_redis_cache.return_value = None
     mock_get_source.return_value = log_source_obj
     
     mock_producer.produce = MagicMock()
@@ -128,11 +138,13 @@ def test_log_accepts_all_valid_levels(mock_get_source, mock_producer, mock_log_s
         response = client.post(SINGLE_LOG_API_ENDPOINT, json=log_data)
         assert response.status_code == 201
 
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.producer")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_rejects_oversized_payload(mock_get_source, mock_producer, mock_log_source):
+def test_log_rejects_oversized_payload(mock_get_source, mock_producer, mock_redis_cache, mock_log_source):
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_log_source)
+    mock_redis_cache.return_value = None
     mock_get_source.return_value = log_source_obj
     
     large_data = {
@@ -163,11 +175,13 @@ def test_log_validates_timestamp_format(mock_producer):
     response = client.post(SINGLE_LOG_API_ENDPOINT, json=invalid_timestamp_data)
     assert response.status_code == 422
 
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.producer")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_accepts_valid_timestamp(mock_get_source, mock_producer, mock_log_source):
+def test_log_accepts_valid_timestamp(mock_get_source, mock_producer, mock_redis_cache, mock_log_source):
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_log_source)
+    mock_redis_cache.return_value = None
     mock_get_source.return_value = log_source_obj
     
     mock_producer.produce = MagicMock()
@@ -181,11 +195,13 @@ def test_log_accepts_valid_timestamp(mock_get_source, mock_producer, mock_log_so
     response = client.post(SINGLE_LOG_API_ENDPOINT, json=valid_timestamp_data)
     assert response.status_code == 201
 
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.producer")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_accepts_json_data_and_metadata(mock_get_source, mock_producer, mock_log_source):
+def test_log_accepts_json_data_and_metadata(mock_get_source, mock_producer, mock_redis_cache, mock_log_source):
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_log_source)
+    mock_redis_cache.return_value = None
     mock_get_source.return_value = log_source_obj
     
     mock_producer.produce = MagicMock()
@@ -214,11 +230,13 @@ def test_log_accepts_json_data_and_metadata(mock_get_source, mock_producer, mock
     response = client.post(SINGLE_LOG_API_ENDPOINT, json=complex_data)
     assert response.status_code == 201
 
+@patch("routers.log_router.api_key_cache_service.get_api_key_cache")
 @patch("routers.log_router.producer")
 @patch("routers.log_router.LogSourceService.get_log_source_by_api_key")
-def test_log_accepts_trace_and_span_ids(mock_get_source, mock_producer, mock_log_source):
+def test_log_accepts_trace_and_span_ids(mock_get_source, mock_producer, mock_redis_cache, mock_log_source):
     # Create a proper LogSourceInDB object for the mock
     log_source_obj = LogSourceInDB(**mock_log_source)
+    mock_redis_cache.return_value = None
     mock_get_source.return_value = log_source_obj
     
     mock_producer.produce = MagicMock()

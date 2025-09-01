@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 from fastapi import HTTPException, status
 from database.LogSourceCrud import LogSourceCRUD
 from model.log_sources import LogSourceCreate, LogSourceUpdate, LogSourceInDB, LogSourceResponse, LogSourceStatus
+from services.redis.api_key_cache_service import api_key_cache_service
 
 class LogSourceService:
     @staticmethod
@@ -124,6 +125,9 @@ class LogSourceService:
         
         LogSourceCRUD.update_log_source(log_source_id, user_id, update_fields, params)
         
+        if update_data.status is not None or update_data.name is not None:
+            api_key_cache_service.invalidate_api_key_cache(log_source.api_key)
+        
         return LogSourceService.get_log_source(log_source_id, user_id)
     
     @staticmethod
@@ -132,4 +136,8 @@ class LogSourceService:
         if not log_source:
             return False
         
-        return LogSourceCRUD.delete_log_source(log_source_id, user_id) 
+        result = LogSourceCRUD.delete_log_source(log_source_id, user_id)
+        if result:
+            api_key_cache_service.invalidate_api_key_cache(log_source.api_key)
+        
+        return result 

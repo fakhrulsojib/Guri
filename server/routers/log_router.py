@@ -5,6 +5,7 @@ from confluent_kafka import Producer
 from model.raw_log import RawLog
 from model.log_sources import LogSourceStatus
 from services.log_source_service import LogSourceService
+from services.redis.api_key_cache_service import api_key_cache_service
 import structlog
 
 # Note: This router is intentionally public and does not require authentication or CSRF tokens
@@ -32,24 +33,35 @@ def delivery_report(err, msg):
 @log_router.post("/", summary="Add Logs", status_code=201)
 async def add_single_log(log: RawLog):
     try:
-        log_source = LogSourceService.get_log_source_by_api_key(log.api_key)
-        if not log_source:
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid API key"
-            )
+        cached_data = api_key_cache_service.get_api_key_cache(log.api_key)
         
-        if log_source.status != LogSourceStatus.ACTIVE:
+        if cached_data:
+            source_id = cached_data["source_id"]
+            is_active = cached_data["active"]
+        else:
+            log_source = LogSourceService.get_log_source_by_api_key(log.api_key)
+            if not log_source:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid API key"
+                )
+            
+            source_id = log_source.id
+            is_active = log_source.status == LogSourceStatus.ACTIVE
+            
+            api_key_cache_service.set_api_key_cache(log.api_key, source_id, is_active)
+        
+        if not is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Log source is not active"
             )
         
-        logger.info("Processing log entry", log_data=log.model_dump(), source_id=log_source.id)
+        logger.info("Processing log entry", log_data=log.model_dump(), source_id=source_id)
         
         log_json = log.model_dump_json(exclude={'api_key'})
         log_data = json.loads(log_json)
-        log_data['source_id'] = log_source.id
+        log_data['source_id'] = source_id
         
         message_bytes = json.dumps(log_data).encode('utf-8')
 

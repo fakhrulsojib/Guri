@@ -20,6 +20,7 @@ services:
                         - kafka
                         - db
                         - chroma
+                        - redis
                 networks:
                         - app_network
                 logging:
@@ -143,12 +144,24 @@ services:
                 networks:
                         - app_network
 
+        redis:
+                image: redis:7-alpine
+                container_name: redis_cache_dev
+                ports:
+                        - "6379:6379"
+                volumes:
+                        - redis_data_dev:/data
+                command: redis-server --appendonly yes
+                networks:
+                        - app_network
+
 volumes:
         zookeeper_data_dev:
         zookeeper_log_dev:
         kafka_data_dev:
         postgres_data_dev:
         chroma_volume_dev:
+        redis_data_dev:
 
 networks:
         app_network:

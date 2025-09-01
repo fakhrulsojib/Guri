@@ -18,6 +18,7 @@ services:
                         - kafka
                         - db
                         - chroma
+                        - redis
                 networks:
                         - app_network
                 logging:
@@ -127,6 +128,17 @@ services:
                 networks:
                         - app_network
 
+        redis:
+                image: redis:7-alpine
+                container_name: redis_cache
+                ports:
+                        - "6379:6379"
+                volumes:
+                        - redis_data:/data
+                command: redis-server --appendonly yes
+                networks:
+                        - app_network
+
         nginx:
                 image: nginx:alpine
                 container_name: nginx_proxy
@@ -149,6 +161,7 @@ volumes:
         kafka_data:
         postgres_data:
         chroma_volume:
+        redis_data:
 
 
 networks:
