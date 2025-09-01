@@ -14,6 +14,10 @@ from consumers.raw_log_to_db_consumer import (
     start_raw_log_to_db_consumer,
     stop_raw_log_to_db_consumer
 )
+from consumers.raw_log_to_pubsub_consumer import (
+    start_raw_log_to_pubsub_consumer,
+    stop_raw_log_to_pubsub_consumer
+)
 from database.database import check_database_connection
 from util.logging_config import setup_logging
 from middleware.logging_middleware import LoggingMiddleware
@@ -44,18 +48,24 @@ async def lifespan(app: FastAPI):
         logger.warning("Database connection check failed, continuing with limited functionality", error=str(e))
     
     try:
-        consumer_thread = Thread(target=start_raw_log_to_db_consumer, daemon=True)
-        consumer_thread.start()
-        logger.info("Started consumer thread")
+        db_consumer_thread = Thread(target=start_raw_log_to_db_consumer, daemon=True)
+        db_consumer_thread.start()
+        logger.info("Started DB consumer thread")
+        
+        pubsub_consumer_thread = Thread(target=start_raw_log_to_pubsub_consumer, daemon=True)
+        pubsub_consumer_thread.start()
+        logger.info("Started PubSub consumer thread")
     except Exception as e:
-        logger.warning("Failed to start consumer thread", error=str(e))
+        logger.warning("Failed to start consumer threads", error=str(e))
     
     yield
     
     logger.info("Shutting down application")
     try:
         stop_raw_log_to_db_consumer()
-        consumer_thread.join(timeout=5.0)
+        stop_raw_log_to_pubsub_consumer()
+        db_consumer_thread.join(timeout=5.0)
+        pubsub_consumer_thread.join(timeout=5.0)
     except Exception as e:
         logger.warning("Error during shutdown", error=str(e))
 
