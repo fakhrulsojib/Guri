@@ -37,7 +37,7 @@ async def google_oauth_callback(
         
         auth_response = await AuthService.authenticate_with_authorization_code(
             authorization_code=code,
-            redirect_uri=f"{request.base_url}auth/google/callback"
+            redirect_uri=f"{str(request.base_url).rstrip('/')}/auth/google/callback"
         )
         
         response = RedirectResponse(url=f"{FRONTEND_URL}?auth=success")
