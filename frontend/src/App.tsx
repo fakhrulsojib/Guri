@@ -6,6 +6,7 @@ import DashboardLayout from './components/DashboardLayout'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
 import LogSourceDetailPage from './pages/LogSourceDetailPage'
+import LogSourceLogsPage from './pages/LogSourceLogsPage'
 import { useAuth } from './hooks/useAuth'
 import { useCSRF } from './hooks/useCSRF'
 
@@ -108,6 +109,21 @@ function App() {
               handleLogout={handleLogout}
             >
               <LogSourceDetailPage isDark={isDark} />
+            </DashboardLayout>
+          ) : (
+            <Navigate to="/" replace />
+          )
+        } />
+
+        {/* Log Source Logs Route - Protected */}
+        <Route path="/dashboard/log-sources/:logSourceId/logs" element={
+          isAuthenticated ? (
+            <DashboardLayout 
+              isDark={isDark}
+              user={user}
+              handleLogout={handleLogout}
+            >
+              <LogSourceLogsPage isDark={isDark} />
             </DashboardLayout>
           ) : (
             <Navigate to="/" replace />
