@@ -36,9 +36,9 @@ class RawLogToPubSubConsumer:
 
     def _has_active_subscribers(self, source_id: str) -> bool:
         try:
-            channel_name = f"logs:source:{source_id}"
-            subscriber_count = self.redis_service.client.pubsub_numsub(channel_name)
-            return subscriber_count[0][1] > 0
+            subscription_key = f"subs:source:{source_id}"
+            subscriber_count = self.redis_service.client.scard(subscription_key)
+            return subscriber_count > 0
         except Exception as e:
             logger.error("Failed to check subscriber count", source_id=source_id, error=str(e))
             return False

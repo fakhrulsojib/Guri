@@ -144,16 +144,16 @@ const LogSourceDetailPage: React.FC<LogSourceDetailPageProps> = ({ isDark }) => 
           >
             Logs
           </button>
-          <button
-            onClick={handleUpdate}
-            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-              isDark 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
-          >
-            Update Log Source
-          </button>
+        <button
+          onClick={handleUpdate}
+          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+            isDark 
+              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
+          }`}
+        >
+          Update Log Source
+        </button>
         </div>
       </div>
 

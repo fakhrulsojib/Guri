@@ -11,16 +11,20 @@ class BaseRedisService:
         self.redis_db = int(os.environ.get("REDIS_DB", 0))
         self.redis_password = os.environ.get("REDIS_PASSWORD")
         
-        self.client = redis.Redis(
-            host=self.redis_host,
-            port=self.redis_port,
-            db=self.redis_db,
-            password=self.redis_password,
-            decode_responses=True,
-            socket_connect_timeout=5,
-            socket_timeout=5,
-            retry_on_timeout=True
-        )
+        redis_kwargs = {
+            'host': self.redis_host,
+            'port': self.redis_port,
+            'db': self.redis_db,
+            'decode_responses': True,
+            'socket_connect_timeout': 5,
+            'socket_timeout': 5,
+            'retry_on_timeout': True
+        }
+        
+        if self.redis_password:
+            redis_kwargs['password'] = self.redis_password
+        
+        self.client = redis.Redis(**redis_kwargs)
     
     def health_check(self) -> bool:
         try:

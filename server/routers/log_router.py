@@ -8,8 +8,7 @@ from services.log_source_service import LogSourceService
 from services.redis.api_key_cache_service import api_key_cache_service
 import structlog
 
-# Note: This router is intentionally public and does not require authentication or CSRF tokens
-# It's designed for log ingestion from external systems and applications
+
 
 logger = structlog.get_logger()
 

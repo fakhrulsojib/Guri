@@ -1,4 +1,5 @@
 import { csrfService } from './csrfService'
+import { authService } from './authService'
 
 export interface LogSource {
   id: number
@@ -24,6 +25,14 @@ export const logSourceService = {
     })
     
     if (!response.ok) {
+      if (response.status === 401) {
+        try {
+          await authService.refreshToken()
+          return logSourceService.getLogSources()
+        } catch (refreshError) {
+          throw new Error('Authentication failed after token refresh')
+        }
+      }
       if (response.status === 403) {
         await csrfService.handleCSRFError()
         return logSourceService.getLogSources()
@@ -46,6 +55,14 @@ export const logSourceService = {
     })
     
     if (!response.ok) {
+      if (response.status === 401) {
+        try {
+          await authService.refreshToken()
+          return logSourceService.createLogSource(logSourceData)
+        } catch (refreshError) {
+          throw new Error('Authentication failed after token refresh')
+        }
+      }
       if (response.status === 403) {
         await csrfService.handleCSRFError()
         return logSourceService.createLogSource(logSourceData)
@@ -66,6 +83,14 @@ export const logSourceService = {
     })
     
     if (!response.ok) {
+      if (response.status === 401) {
+        try {
+          await authService.refreshToken()
+          return logSourceService.getLogSource(id)
+        } catch (refreshError) {
+          throw new Error('Authentication failed after token refresh')
+        }
+      }
       if (response.status === 403) {
         await csrfService.handleCSRFError()
         return logSourceService.getLogSource(id)
@@ -87,6 +112,14 @@ export const logSourceService = {
     })
     
     if (!response.ok) {
+      if (response.status === 401) {
+        try {
+          await authService.refreshToken()
+          return logSourceService.getLogSourceApiKey(id)
+        } catch (refreshError) {
+          throw new Error('Authentication failed after token refresh')
+        }
+      }
       if (response.status === 403) {
         await csrfService.handleCSRFError()
         return logSourceService.getLogSourceApiKey(id)
@@ -112,6 +145,14 @@ export const logSourceService = {
     })
     
     if (!response.ok) {
+      if (response.status === 401) {
+        try {
+          await authService.refreshToken()
+          return logSourceService.updateLogSource(id, logSourceData)
+        } catch (refreshError) {
+          throw new Error('Authentication failed after token refresh')
+        }
+      }
       if (response.status === 403) {
         await csrfService.handleCSRFError()
         return logSourceService.updateLogSource(id, logSourceData)

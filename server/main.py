@@ -1,4 +1,5 @@
 import os
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -10,6 +11,9 @@ from routers.health_router import health_router
 from routers.log_router import log_router
 from routers.auth_router import auth_router
 from routers.log_sources_router import router as log_sources_router
+from routers.websocket_router import websocket_router
+from services.websocket import WebSocketManager, initialize_websocket_manager, cleanup_websocket_manager
+from services.websocket.state import active_connections
 from consumers.raw_log_to_db_consumer import (
     start_raw_log_to_db_consumer,
     stop_raw_log_to_db_consumer
@@ -33,6 +37,8 @@ CSRF_SECRET_KEY = os.getenv("CSRF_SECRET_KEY", secrets.token_hex(32))
 
 logger = structlog.get_logger()
 
+ws_manager = WebSocketManager()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(LOG_LEVEL, LOG_FORMAT, LOG_DIR)
@@ -55,6 +61,9 @@ async def lifespan(app: FastAPI):
         pubsub_consumer_thread = Thread(target=start_raw_log_to_pubsub_consumer, daemon=True)
         pubsub_consumer_thread.start()
         logger.info("Started PubSub consumer thread")
+        
+        await asyncio.sleep(2)
+        await initialize_websocket_manager(ws_manager)
     except Exception as e:
         logger.warning("Failed to start consumer threads", error=str(e))
     
@@ -66,6 +75,8 @@ async def lifespan(app: FastAPI):
         stop_raw_log_to_pubsub_consumer()
         db_consumer_thread.join(timeout=5.0)
         pubsub_consumer_thread.join(timeout=5.0)
+        
+        await cleanup_websocket_manager(ws_manager, active_connections)
     except Exception as e:
         logger.warning("Error during shutdown", error=str(e))
 
@@ -106,3 +117,4 @@ app.include_router(health_router)
 app.include_router(log_router)
 app.include_router(auth_router)
 app.include_router(log_sources_router)
+app.include_router(websocket_router)
