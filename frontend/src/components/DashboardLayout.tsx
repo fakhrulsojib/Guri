@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Header from './Header'
 import ThemeToggle from './ThemeToggle'
@@ -8,7 +8,10 @@ import { LogSourcesIcon, ProfileIcon, SettingsIcon, ChevronLeftIcon, ChevronRigh
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, user, handleLogout }) => {
   const navigate = useNavigate()
   const location = useLocation()
-  const [isNavCollapsed, setIsNavCollapsed] = useState(false)
+  const [isNavCollapsed, setIsNavCollapsed] = useState(() => {
+    const saved = localStorage.getItem('dashboardNavCollapsed')
+    return saved ? JSON.parse(saved) : false
+  })
 
   const navigationItems: NavigationItem[] = [
     { 
@@ -43,7 +46,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, isDark, use
   }
 
   const toggleNav = (): void => {
-    setIsNavCollapsed(!isNavCollapsed)
+    const newState = !isNavCollapsed
+    setIsNavCollapsed(newState)
+    localStorage.setItem('dashboardNavCollapsed', JSON.stringify(newState))
   }
 
   return (
