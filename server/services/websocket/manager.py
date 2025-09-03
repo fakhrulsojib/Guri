@@ -19,7 +19,7 @@ PING_TIMEOUT_SECONDS = 45
 class WebSocketManager:
     def __init__(self):
         self.redis_client = None
-        self.pubsub = None
+        self.connection_pubsubs = {}
         self.timeout_checker_task = None
         self._redis_connection_pool = None
     
@@ -61,12 +61,12 @@ class WebSocketManager:
             return False
     
     async def disconnect_redis(self):
-        if self.pubsub:
+        for connection_id, pubsub in self.connection_pubsubs.items():
             try:
-                await self.pubsub.close()
+                await pubsub.close()
             except:
                 pass
-            self.pubsub = None
+        self.connection_pubsubs.clear()
             
         if self.redis_client:
             try:
@@ -138,10 +138,10 @@ class WebSocketManager:
             
             channel_name = f"logs:source:{source_id}"
             
-            if not self.pubsub:
-                self.pubsub = self.redis_client.pubsub()
+            pubsub = self.redis_client.pubsub()
+            self.connection_pubsubs[connection_id] = pubsub
             
-            await self.pubsub.subscribe(channel_name)
+            await pubsub.subscribe(channel_name)
             
             subscription_key = f"subs:source:{source_id}"
             await self.redis_client.sadd(subscription_key, connection_id)
@@ -155,11 +155,13 @@ class WebSocketManager:
     
     async def listen_to_logs(self, source_id: int, connection_id: str):
         try:
-            if not self.pubsub:
+            if connection_id not in self.connection_pubsubs:
                 logger.warning("PubSub not available for listening", connection_id=connection_id)
                 return
             
-            async for message in self.pubsub.listen():
+            pubsub = self.connection_pubsubs[connection_id]
+            
+            async for message in pubsub.listen():
                 if message["type"] == "message":
                     log_data = json.loads(message["data"])
                     ws_message = {
@@ -185,6 +187,13 @@ class WebSocketManager:
                 await self.remove_connection(connection_id)
     
     async def remove_connection(self, connection_id: str):
+        if connection_id in self.connection_pubsubs:
+            try:
+                await self.connection_pubsubs[connection_id].close()
+            except:
+                pass
+            del self.connection_pubsubs[connection_id]
+        
         if hasattr(self, 'active_connections') and connection_id in self.active_connections:
             websocket = self.active_connections[connection_id]
             del self.active_connections[connection_id]
