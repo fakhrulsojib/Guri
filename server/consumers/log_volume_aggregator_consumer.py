@@ -58,16 +58,9 @@ class LogVolumeAggregatorConsumer:
         """Truncate timestamp to the start of its UTC minute"""
         return timestamp.replace(second=0, microsecond=0)
 
-    def _increment_volume_count(self, source_id: int, timestamp: datetime) -> None:
-        """Increment the volume count for a source_id and minute bucket"""
-        bucket_minute = self._truncate_to_minute_start(timestamp)
-        key = (source_id, bucket_minute)
-        
-        with self._lock:
-            self._volume_counts[key] = self._volume_counts.get(key, 0) + 1
 
     def _flush_volume_counts_to_db(self) -> None:
-        """Flush accumulated volume counts to database"""
+        """Flush accumulated volume counts to database in batch"""
         if not self._volume_counts:
             return
         
@@ -79,15 +72,21 @@ class LogVolumeAggregatorConsumer:
             return
         
         try:
-            for (source_id, bucket_minute), count in counts_to_flush.items():
-                execute_query(
-                    UPSERT_LOG_VOLUME_SQL,
-                    (source_id, bucket_minute, count, count)
-                )
+            from database.database import get_connection
+            with get_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Prepare batch data
+                    batch_data = []
+                    for (source_id, bucket_minute), count in counts_to_flush.items():
+                        batch_data.append((source_id, bucket_minute, count, count))
+                    
+                    # Execute batch upsert
+                    cursor.executemany(UPSERT_LOG_VOLUME_SQL, batch_data)
+                    conn.commit()
             
-            logger.info(f"Flushed {len(counts_to_flush)} volume counts to database")
+            logger.info(f"Batch flushed {len(counts_to_flush)} volume counts to database")
         except Exception as e:
-            logger.error("Failed to flush volume counts to database", error=str(e))
+            logger.error("Failed to batch flush volume counts to database", error=str(e))
             # Re-add failed counts back to the dictionary
             with self._lock:
                 for key, count in counts_to_flush.items():
@@ -133,6 +132,47 @@ class LogVolumeAggregatorConsumer:
         except Exception as e:
             logger.error("Failed to run anomaly detection", error=str(e))
 
+
+    def _process_log_batch(self, messages) -> None:
+        """Process a batch of log messages"""
+        batch_counts = {}
+        
+        for msg in messages:
+            try:
+                log_data = json.loads(msg.value().decode('utf-8'))
+                
+                source_id = log_data.get('source_id')
+                timestamp_str = log_data.get('timestamp')
+                
+                if not source_id or not timestamp_str:
+                    logger.warning("Skipping log without source_id or timestamp")
+                    continue
+                
+                # Parse timestamp
+                try:
+                    timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                except ValueError:
+                    logger.warning("Invalid timestamp format", timestamp=timestamp_str)
+                    continue
+                
+                # Truncate to minute start
+                bucket_minute = self._truncate_to_minute_start(timestamp)
+                key = (source_id, bucket_minute)
+                
+                # Add to batch counts
+                batch_counts[key] = batch_counts.get(key, 0) + 1
+                
+            except Exception as e:
+                logger.error("Failed to process log message", error=str(e))
+        
+        # Add batch counts to main dictionary
+        if batch_counts:
+            with self._lock:
+                for key, count in batch_counts.items():
+                    self._volume_counts[key] = self._volume_counts.get(key, 0) + count
+            
+            logger.info(f"Processed batch of {len(messages)} logs, aggregated into {len(batch_counts)} minute buckets")
+
     def _consume_loop(self):
         consumer = Consumer({
             'bootstrap.servers': KAFKA_BROKER,
@@ -148,54 +188,61 @@ class LogVolumeAggregatorConsumer:
         
         try:
             while self._running:
-                msg = consumer.poll(timeout=1.0)
-                if msg is None:
-                    # Check if we need to flush, cleanup, or run anomaly detection
-                    current_time = time.time()
+                # Batch consume logs every 5 minutes
+                current_time = time.time()
+                
+                # Check if it's time to flush, cleanup, or run anomaly detection
+                should_flush = current_time - last_flush_time >= 300  # 5 minutes
+                should_cleanup = current_time - last_cleanup_time >= 600  # 10 minutes
+                should_run_anomaly = current_time - last_anomaly_check_time >= 300  # 5 minutes
+                
+                if should_flush or should_cleanup or should_run_anomaly:
+                    # Process any remaining logs in a small batch before maintenance tasks
+                    messages = []
+                    for _ in range(100):  # Small batch for remaining logs
+                        msg = consumer.poll(timeout=0.01)
+                        if msg is None:
+                            break
+                        if msg.error():
+                            logger.error("Kafka error", error=str(msg.error()))
+                            continue
+                        messages.append(msg)
                     
-                    # Flush every 5 minutes
-                    if current_time - last_flush_time >= 300:  # 5 minutes
+                    if messages:
+                        self._process_log_batch(messages)
+                    
+                    # Perform maintenance tasks
+                    if should_flush:
                         self._flush_volume_counts_to_db()
                         last_flush_time = current_time
                     
-                    # Cleanup every 10 minutes
-                    if current_time - last_cleanup_time >= 600:  # 10 minutes
+                    if should_cleanup:
                         self._cleanup_old_data()
                         last_cleanup_time = current_time
                     
-                    # Run anomaly detection every 5 minutes
-                    if current_time - last_anomaly_check_time >= 300:  # 5 minutes
+                    if should_run_anomaly:
                         self._run_anomaly_detection()
                         last_anomaly_check_time = current_time
                     
                     continue
                 
-                if msg.error():
-                    logger.error("Kafka error", error=str(msg.error()))
-                    continue
+                # Regular batch processing
+                messages = []
+                for _ in range(1000):  # Batch size
+                    msg = consumer.poll(timeout=0.1)
+                    if msg is None:
+                        break
+                    if msg.error():
+                        logger.error("Kafka error", error=str(msg.error()))
+                        continue
+                    messages.append(msg)
                 
-                try:
-                    log_data = json.loads(msg.value().decode('utf-8'))
+                if messages:
+                    self._process_log_batch(messages)
+                else:
+                    # No messages, sleep briefly
+                    time.sleep(0.1)
                     
-                    source_id = log_data.get('source_id')
-                    timestamp_str = log_data.get('timestamp')
-                    
-                    if not source_id or not timestamp_str:
-                        logger.warning("Skipping log without source_id or timestamp")
-                        continue
-                    
-                    # Parse timestamp
-                    try:
-                        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-                    except ValueError:
-                        logger.warning("Invalid timestamp format", timestamp=timestamp_str)
-                        continue
-                    
-                    # Increment volume count
-                    self._increment_volume_count(source_id, timestamp)
-                    
-                except Exception as e:
-                    logger.error("Failed to process log for volume aggregation", error=str(e))
         finally:
             # Flush any remaining counts before closing
             self._flush_volume_counts_to_db()
