@@ -1,0 +1,248 @@
+## 🐳 **Docker-Based RAG System Implementation Plan**
+
+### **Architecture Overview**
+```
+Docker Containers:
+├── backend (FastAPI + RAG Service + CodeLlama)
+├── chroma (ChromaDB for embeddings)
+├── db (PostgreSQL for metadata)
+├── kafka (Message streaming)
+└── ollama (Local LLM service)
+```
+
+---
+
+## 📋 **Step-by-Step Docker Implementation Plan**
+
+### **Phase 1: Docker Services Setup**
+
+#### **Step 1: Add Ollama Service to Docker Compose**
+1. **Update `docker-compose.yml`**
+   - Add Ollama service
+   - Configure network connectivity
+   - Set up volume persistence for models
+
+2. **Ollama Service Configuration**
+   ```yaml
+   ollama:
+     image: ollama/ollama:latest
+     container_name: ollama_server
+     ports:
+       - "11434:11434"
+     volumes:
+       - ollama_data:/root/.ollama
+     environment:
+       - OLLAMA_HOST=0.0.0.0
+     networks:
+       - app_network
+     deploy:
+       resources:
+         reservations:
+           memory: 4G
+   ```
+
+3. **Add Volume**
+   ```yaml
+   volumes:
+     ollama_data:
+   ```
+
+#### **Step 2: Update Backend Service**
+1. **Add Dependencies to Backend**
+   - Update `requirements.txt` with RAG dependencies
+   - Add model download capabilities
+
+2. **Update Backend Volumes**
+   ```yaml
+   backend:
+     volumes:
+       - ./server:/app
+       - ./ml:/app/ml
+       - ./chroma_data:/app/chroma_data
+       - ./logs/backend:/app/logs/backend
+       - ./models:/app/models  # For local model cache
+   ```
+
+---
+
+3. **Update Database Initialization**
+   - Add RAG tables to ChromaDB setup for encodings and metadata.
+
+---
+
+### **Phase 3: ML Module Structure (Inside Docker)**
+
+#### **Step 4: Create RAG ML Module**
+1. **Directory Structure**
+   ```
+   ml/rag/
+   ├── __init__.py
+   ├── text_processor.py
+   ├── embedding_generator.py
+   ├── query_processor.py
+   ├── chunk_manager.py
+   ├── ollama_client.py
+   └── models/
+       ├── __init__.py
+       └── rag_models.py
+   ```
+
+2. **Docker-Specific Considerations**
+   - Model paths: `/app/models/`
+   - ChromaDB connection: `chroma:8000`
+   - Ollama connection: `ollama:11434`
+   - PostgreSQL connection: `db:5432`
+
+3. **Model Management**
+   - Download models during container startup
+   - Cache models in `/app/models/` volume
+   - Handle model updates and versioning
+
+---
+
+### **Phase 4: RAG Consumer Implementation**
+
+#### **Step 5: Create RAG Consumer**
+1. **File: `server/consumers/raw_log_to_rag_consumer.py`**
+
+2. **Docker-Specific Configuration**
+   ```python
+   # Environment variables for Docker
+   CHROMA_HOST = os.environ.get("CHROMA_HOST", "chroma")
+   CHROMA_PORT = os.environ.get("CHROMA_PORT", "8000")
+   OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "ollama")
+   OLLAMA_PORT = os.environ.get("OLLAMA_PORT", "11434")
+   MODEL_CACHE_PATH = "/app/models"
+   ```
+
+3. **Consumer Features**
+   - Subscribe to `raw_logs` Kafka topic
+   - Process logs in batches
+   - Group by `source_id` (source-based chunking) *IMPORTANT STEP*
+   - Collect for 1 hour and then generate embeddings using `all-mpnet-base-v2`
+   - Store in ChromaDB with metadata of that hour
+
+4. **Chunking Strategy**
+   - **Source-based chunks**: Group all logs from same source
+   - **Time windows**: Within each source, group by time (1-hour windows)
+   - **Size limits**: Max 1000 logs per chunk
+   - **Chunk ID format**: `source_{source_id}_chunk_{timestamp}_{index}`
+
+---
+
+### **Phase 5: RAG Service Implementation**
+
+#### **Step 6: Create RAG Service**
+1. **File: `server/services/rag_service.py`**
+
+2. **Docker Service Connections**
+   ```python
+   class RAGService:
+       def __init__(self):
+           self.chroma_client = chromadb.HttpClient(
+               host="chroma", 
+               port=8000
+           )
+           self.ollama_client = ollama.Client(
+               host=f"http://ollama:11434"
+           )
+           self.embedding_model = SentenceTransformer(
+               'all-mpnet-base-v2',
+               cache_folder='/app/models'
+           )
+   ```
+
+3. **Service Components**
+   - ChromaDB client (HTTP connection to chroma container)
+   - Ollama client (HTTP connection to ollama container)
+   - Embedding model (cached in `/app/models/`)
+   - Query processing pipeline
+   - Response generation
+
+---
+
+### **Phase 6: API Endpoints**
+
+#### **Step 7: Create RAG API Router**
+1. **File: `server/routers/rag.py`**
+
+2. **Endpoints**
+   - `POST /api/rag/sources/{source_id}/query` - Natural language query
+
+3. **Docker-Specific Error Handling**
+   - Graceful degradation when services are unavailable
+
+---
+
+### **Phase 7: Docker Configuration Updates**
+
+#### **Step 8: Update Docker Compose**
+1. **Complete `docker-compose.yml` Updates**
+   ```yaml
+   services:
+     backend:
+       # ... existing config ...
+       depends_on:
+         - kafka
+         - db
+         - chroma
+         - redis
+         - ollama  # Add ollama dependency
+       environment:
+         # ... existing env vars ...
+         - OLLAMA_HOST=ollama
+         - OLLAMA_PORT=11434
+         - CHROMA_HOST=chroma
+         - CHROMA_PORT=8000
+         - MODEL_CACHE_PATH=/app/models
+     
+     ollama:
+       image: ollama/ollama:latest
+       container_name: ollama_server
+       ports:
+         - "11434:11434"
+       volumes:
+         - ollama_data:/root/.ollama
+       environment:
+         - OLLAMA_HOST=0.0.0.0
+       networks:
+         - app_network
+       deploy:
+         resources:
+           reservations:
+             memory: 4G
+   
+   volumes:
+     ollama_data:
+   ```
+
+2. **Update Development Docker Compose**
+   - Apply same changes to `docker-compose.dev.yml`
+   - Ensure development environment consistency
+
+#### **Step 9: Update Requirements and Dependencies**
+1. **Update `requirements.txt`**
+   ```
+   sentence-transformers==2.2.2
+   chromadb==0.4.15
+   ollama==0.1.7
+   numpy==1.24.3
+   pandas==2.0.3
+   ```
+
+---
+
+### **Phase 8: Container Startup and Initialization**
+
+#### **Step 10: Model Download and Initialization**
+   - Ensure proper startup order
+   - Add retry logic for service connections
+   - Implement graceful shutdown
+
+---
+
+## SOME IMPORTANT INSTRUCTIONS THAT MUST BE FOLLOWED**
+
+1. Try to read static values using variables placed on top of the classes.
+2. If any property should be placed in environment file, you wont be able to read .env, but can use command line to modify/add in it. Also reflect that change in example.env with mock data.
+---
