@@ -22,6 +22,10 @@ from consumers.raw_log_to_pubsub_consumer import (
     start_raw_log_to_pubsub_consumer,
     stop_raw_log_to_pubsub_consumer
 )
+from consumers.log_volume_aggregator_consumer import (
+    start_log_volume_aggregator_consumer,
+    stop_log_volume_aggregator_consumer
+)
 from database.database import check_database_connection
 from util.logging_config import setup_logging
 from middleware.logging_middleware import LoggingMiddleware
@@ -62,6 +66,10 @@ async def lifespan(app: FastAPI):
         pubsub_consumer_thread.start()
         logger.info("Started PubSub consumer thread")
         
+        volume_aggregator_thread = Thread(target=start_log_volume_aggregator_consumer, daemon=True)
+        volume_aggregator_thread.start()
+        logger.info("Started log volume aggregator consumer thread")
+        
         await asyncio.sleep(2)
         await initialize_websocket_manager(ws_manager)
     except Exception as e:
@@ -73,8 +81,10 @@ async def lifespan(app: FastAPI):
     try:
         stop_raw_log_to_db_consumer()
         stop_raw_log_to_pubsub_consumer()
+        stop_log_volume_aggregator_consumer()
         db_consumer_thread.join(timeout=5.0)
         pubsub_consumer_thread.join(timeout=5.0)
+        volume_aggregator_thread.join(timeout=5.0)
         
         await cleanup_websocket_manager(ws_manager, active_connections)
     except Exception as e:
