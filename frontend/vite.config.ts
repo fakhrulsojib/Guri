@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), '')
-	
+
 	return {
 		plugins: [react()],
 		server: {
@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
 					target: 'http://backend:8000',
 					changeOrigin: true,
 					secure: false,
+					ws: true
 				},
 				'/auth': {
 					target: 'http://backend:8000',
