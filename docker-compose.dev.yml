@@ -10,6 +10,7 @@ services:
                         - "8000:8000"
                 volumes:
                         - ./server:/app
+                        - ./ml:/app/ml
                         - ./chroma_data:/app/chroma_data
                         - ./logs/backend:/app/logs/backend
                 command: >
@@ -21,6 +22,7 @@ services:
                         - db
                         - chroma
                         - redis
+                        - ollama
                 networks:
                         - app_network
                 logging:
@@ -155,6 +157,22 @@ services:
                 networks:
                         - app_network
 
+        ollama:
+                image: ollama/ollama:latest
+                container_name: ollama_server_dev
+                ports:
+                        - "11435:11434"
+                volumes:
+                        - ollama_data_dev:/root/.ollama
+                environment:
+                        - OLLAMA_HOST=0.0.0.0
+                networks:
+                        - app_network
+                deploy:
+                        resources:
+                                reservations:
+                                        memory: 2G
+
 volumes:
         zookeeper_data_dev:
         zookeeper_log_dev:
@@ -162,7 +180,9 @@ volumes:
         postgres_data_dev:
         chroma_volume_dev:
         redis_data_dev:
+        ollama_data_dev:
+
 
 networks:
         app_network:
-                driver: bridge 
+                driver: bridge
