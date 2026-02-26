@@ -6,6 +6,8 @@ services:
                 container_name: fastapi_server
                 expose:
                         - "8000"
+                volumes:
+                        - backend_logs:/app/logs/backend
                 command: >
                         uvicorn main:app --host 0.0.0.0 --port 8000
                 env_file:
@@ -66,6 +68,8 @@ services:
         kafka:
                 image: confluentinc/cp-kafka:7.5.3
                 container_name: kafka
+                ports:
+                        - "9092:9092"
                 depends_on:
                         - zookeeper
                 environment:
@@ -169,6 +173,7 @@ volumes:
         zookeeper_log:
         kafka_data:
         postgres_data:
+        backend_logs:
         chroma_volume:
         redis_data:
 
