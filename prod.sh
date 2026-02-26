@@ -18,13 +18,17 @@ check_prerequisites(){
     echo "⚠️  .htpasswd file not found (required for Kafka-UI authentication)."
     read -p "   Would you like to create it now? (y/n): " CREATE_HTPASSWD
     if [ "$CREATE_HTPASSWD" = "y" ] || [ "$CREATE_HTPASSWD" = "Y" ]; then
-      # Check if htpasswd is available
-      if ! command -v htpasswd &> /dev/null; then
-        echo "   Installing apache2-utils for htpasswd..."
-        sudo apt-get update -qq && sudo apt-get install -y -qq apache2-utils
-      fi
       read -p "   Enter username for Kafka-UI: " KAFKAUI_USER
-      htpasswd -c .htpasswd "$KAFKAUI_USER"
+      read -s -p "   Enter password for Kafka-UI: " KAFKAUI_PASS
+      echo ""
+
+      if command -v htpasswd &> /dev/null; then
+        htpasswd -cb .htpasswd "$KAFKAUI_USER" "$KAFKAUI_PASS"
+      else
+        # Fallback: use Docker to generate the htpasswd file
+        echo "   htpasswd not found locally, using Docker to generate..."
+        docker run --rm httpd:alpine htpasswd -cb /dev/stdout "$KAFKAUI_USER" "$KAFKAUI_PASS" > .htpasswd
+      fi
       echo "  ✅ .htpasswd created"
     else
       echo "❌ .htpasswd is required. Aborting."
