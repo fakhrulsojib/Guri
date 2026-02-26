@@ -6,22 +6,22 @@ services:
                 container_name: fastapi_server
                 expose:
                         - "8000"
-                volumes:
-                        - ./server:/app
-                        - ./ml:/app/ml
-                        - ./chroma_data:/app/chroma_data
-                        - ./logs/backend:/app/logs/backend
                 command: >
-                        uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+                        uvicorn main:app --host 0.0.0.0 --port 8000
                 env_file:
                         - .env
                 depends_on:
-                        - kafka
-                        - db
-                        - chroma
-                        - redis
+                        db:
+                                condition: service_healthy
+                        kafka:
+                                condition: service_started
+                        chroma:
+                                condition: service_started
+                        redis:
+                                condition: service_healthy
                 networks:
                         - app_network
+                restart: unless-stopped
                 logging:
                         driver: "json-file"
                         options:
@@ -32,32 +32,27 @@ services:
                         - LOG_FORMAT=json
                         - LOG_DIR=/app/logs/backend
                         - LOG_RETENTION_DAYS=30
+                healthcheck:
+                        test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+                        interval: 30s
+                        timeout: 10s
+                        retries: 3
+                        start_period: 40s
 
         frontend:
-                image: node:18-alpine
+                build:
+                        context: ./frontend
+                        dockerfile: Dockerfile
                 container_name: vite_frontend
-                ports:
-                        - "3000:3000"
-                volumes:
-                        - ./frontend:/app
-                        - /app/node_modules
-                working_dir: /app
-                environment:
-                        - NODE_ENV=production
+                expose:
+                        - "80"
                 networks:
                         - app_network
-                stdin_open: true
-                tty: true
-                user: root
-                command: sh -c "npm install --include=dev && npx vite --mode production --host 0.0.0.0 --port 3000"
-                expose:
-                        - "3000"
+                restart: unless-stopped
 
         zookeeper:
                 image: confluentinc/cp-zookeeper:7.5.3
                 container_name: zookeeper
-                ports:
-                        - "2181:2181"
                 environment:
                         ZOOKEEPER_CLIENT_PORT: 2181
                         ZOOKEEPER_TICK_TIME: 2000
@@ -66,13 +61,11 @@ services:
                         - zookeeper_log:/var/lib/zookeeper/log
                 networks:
                         - app_network
+                restart: unless-stopped
 
         kafka:
                 image: confluentinc/cp-kafka:7.5.3
                 container_name: kafka
-                ports:
-                        - "9092:9092"
-                        - "9093:9093"
                 depends_on:
                         - zookeeper
                 environment:
@@ -88,26 +81,27 @@ services:
                         - kafka_data:/var/lib/kafka/data
                 networks:
                         - app_network
+                restart: unless-stopped
 
         kafka-ui:
                 image: provectuslabs/kafka-ui:latest
                 container_name: kafka_ui
-                ports:
-                        - "8080:8080"
+                expose:
+                        - "8080"
                 depends_on:
                         - kafka
                 environment:
                         KAFKA_CLUSTERS_0_NAME: local-kafka
                         KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
                         KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+                        SERVER_SERVLET_CONTEXT_PATH: /kafka-ui
                 networks:
                         - app_network
+                restart: unless-stopped
 
         db:
-                image: postgres:13-alpine
+                image: postgres:16-alpine
                 container_name: postgres_db
-                ports:
-                        - "5432:5432"
                 environment:
                         POSTGRES_DB: ${POSTGRES_DB:-fastapi_db}
                         POSTGRES_USER: ${POSTGRES_USER:-user}
@@ -116,29 +110,41 @@ services:
                         - postgres_data:/var/lib/postgresql/data
                 networks:
                         - app_network
+                restart: unless-stopped
+                healthcheck:
+                        test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-fastapi_db}" ]
+                        interval: 10s
+                        timeout: 5s
+                        retries: 5
+                        start_period: 30s
 
         chroma:
                 image: chromadb/chroma:latest
                 container_name: chromadb_server
-                ports:
-                        - "8001:8000"
+                expose:
+                        - "8000"
                 volumes:
                         - chroma_volume:/chroma/chroma
                 environment:
                         IS_PERSISTENT: "TRUE"
                 networks:
                         - app_network
+                restart: unless-stopped
 
         redis:
                 image: redis:7-alpine
                 container_name: redis_cache
-                ports:
-                        - "6379:6379"
                 volumes:
                         - redis_data:/data
                 command: redis-server --appendonly yes
                 networks:
                         - app_network
+                restart: unless-stopped
+                healthcheck:
+                        test: [ "CMD", "redis-cli", "ping" ]
+                        interval: 10s
+                        timeout: 5s
+                        retries: 5
 
         nginx:
                 image: nginx:alpine
@@ -150,11 +156,13 @@ services:
                         - ./nginx.conf:/etc/nginx/nginx.conf:ro
                         - ./certbot/conf:/etc/letsencrypt
                         - ./certbot/www:/var/www/certbot
+                        - ./.htpasswd:/etc/nginx/.htpasswd:ro
                 depends_on:
                         - frontend
                         - backend
                 networks:
                         - app_network
+                restart: unless-stopped
 
 volumes:
         zookeeper_data:

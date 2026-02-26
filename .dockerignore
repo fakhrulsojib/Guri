@@ -1,0 +1,15 @@
+.git
+.env*
+__pycache__
+*.pyc
+node_modules
+frontend/node_modules
+frontend/dist
+*.md
+.vscode
+.idea
+logs/
+chroma_data/
+certbot/
+.agents/
+.gemini/

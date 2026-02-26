@@ -21,8 +21,21 @@ This repository contains separated frontend, backend, and machine learning compo
 - **ML Configuration:** `/ml/model_config.py` or `.env` setups.
 - **Environment & Deployment:** `docker-compose.yml`, `docker-compose.dev.yml`, and `.env` files at the repository root.
 
+## 📚 Required Reading
+Before making changes, read these documents for full project context:
+
+| Document | Scope | What You'll Learn |
+|---|---|---|
+| [`README.md`](./README.md) | Project-wide | Quick start, deployment workflow, SSL setup, Docker cleanup. |
+| [`ENVIRONMENT_SETUP.md`](./ENVIRONMENT_SETUP.md) | Infrastructure | File structure, dev vs prod environment config, maintenance procedures. |
+| [`frontend/.context.md`](./frontend/.context.md) | Frontend | React/Vite architecture, state management, error handling patterns. |
+| [`server/.context.md`](./server/.context.md) | Backend | FastAPI architecture, DB access patterns, validation rules. |
+| [`ml/.context.md`](./ml/.context.md) | ML | ML pipelines, anomaly detection, RAG service boundaries. |
+
 ## 🚫 Constraints (AI Rules)
 - Do NOT invent undefined root-level directories.
 - Do NOT assume Node.js for the backend. The backend is built natively in Python using FastAPI.
 - Do NOT bypass standard Kafka ingestion pipelines for log ingestion without justification.
 - Do NOT alter database schemas without verifying against the existing models in `/server/model/`.
+- Do NOT modify Docker or Nginx configurations without reviewing [`ENVIRONMENT_SETUP.md`](./ENVIRONMENT_SETUP.md) first.
+- Do NOT commit `.htpasswd` or `.env` files to source control.
