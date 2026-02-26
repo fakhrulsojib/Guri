@@ -1,153 +1,59 @@
-# Pulse AI
+# 🚀 Pulse AI 
+> **Goal:** A smart log analytics platform built with FastAPI, Kafka, and AI-powered insights.
 
-A smart log analytics platform built with FastAPI, Kafka, and AI-powered insights.
+## ⚡ Quick Start & Environments
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Latest Docker and Docker Compose
-- Executable permissions for scripts
-
-### Environment Selection
-
-**For Local Development (No SSL/Domain required):**
+### 💻 Local Development (No SSL/Domain required)
+Perfect for developers who want to run the app locally.
+1. Copy `.env.dev` to `.env` and configure credentials.
+2. Start services:
 ```bash
 ./dev.sh
-# or
+# or 
 make dev
 ```
+3. **Access Services:**
+   - Frontend: `http://localhost:3000`
+   - API Docs: `http://localhost:8000/docs`
+   - Kafka UI: `http://localhost:8080`
+4. Stop services: `make dev-down`
 
-**For Production (SSL/Domain required):**
-```bash
-./prod.sh
-# or
-make prod
-```
-
-## 🛠️ Setup Instructions
-
-### Development Environment (Local)
-
-Perfect for developers who want to run the app locally without SSL setup.
-
-1. **Environment Configuration**
-```bash
-# Copy development environment file
-cp .env.dev .env
-
-# Edit with your Google OAuth credentials
-nano .env
-```
-
-2. **Start Development Services**
-```bash
-./dev.sh
-# or
-make dev
-```
-
-3. **Access Services**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-- Kafka UI: http://localhost:8080
-- PostgreSQL: localhost:5432
-- ChromaDB: localhost:8001
-
-4. **Stop Services**
-```bash
-docker compose -f docker-compose.dev.yml down
-# or
-make dev-down
-```
-
-### Production Environment (Domain + SSL)
-
+### 🌐 Production Delivery (Domain + SSL)
 For production deployment with SSL certificates and domain setup.
-
-1. **Environment Configuration**
-```bash
-# Copy production environment file
-cp .env.prod .env
-
-# Edit with your production settings
-nano .env
-```
-
-2. **Start Production Services**
+1. Copy `.env.prod` to `.env` and configure production settings.
+2. Start services:
 ```bash
 ./prod.sh
-# or
+# or 
 make prod
 ```
+3. Stop services: `make prod-down`
 
-3. **SSL Certificate Setup (First Run)**
-Prereqs: DNS A record points your domain to this server. Update `nginx.conf` `server_name` if needed.
+## 🔒 SSL Certificate Setup (First Run Production)
+1. DNS A record points your domain to this server.
+2. Ensure containers are up and `nginx_proxy` is serving `/.well-known`:
+   `docker compose -f docker-compose.prod.yml up -d nginx`
+3. Issue the certificate using Certbot:
+   ```bash
+   docker run --rm -it \
+     -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
+     -v "$(pwd)/certbot/www:/var/www/certbot" \
+     certbot/certbot certonly --webroot \
+     -w /var/www/certbot \
+     -d your-domain.com \
+     --email your-email@example.com --agree-tos --no-eff-email
+   ```
+4. Reload nginx: `docker compose -f docker-compose.prod.yml exec nginx nginx -s reload`
 
-1) Ensure containers are up and `nginx_proxy` is serving `/.well-known` from `certbot/www` (already configured):
-```bash
-docker compose -f docker-compose.prod.yml up -d nginx
-```
+## 🛠️ Tech Stack & Components
+| Component | Technology | Description |
+|---|---|---|
+| **Backend API** | FastAPI, asyncpg, Python | RESTful API with Google OAuth. |
+| **Frontend UI** | React, Vite, TS | Modern web interface. |
+| **Database** | PostgreSQL | User management and log storage. |
+| **Streaming** | Apache Kafka | Real-time log streaming. |
+| **Vector DB** | ChromaDB | Database for AI-powered insights. |
 
-2) Issue the certificate using Certbot Docker (webroot):
-```bash
-docker run --rm -it \
-  -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
-  -v "$(pwd)/certbot/www:/var/www/certbot" \
-  certbot/certbot certonly --webroot \
-  -w /var/www/certbot \
-  -d your-domain.com \
-  --email your-email@example.com --agree-tos --no-eff-email
-```
-
-3) Reload nginx to pick up the certs:
-```bash
-docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
-```
-
-4) Auto-renew (cron):
-```bash
-# Edit root crontab
-sudo crontab -e
-# Add (runs daily at 3:15am; reloads nginx if renewed):
-15 3 * * * docker run --rm \
-  -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
-  -v "$(pwd)/certbot/www:/var/www/certbot" \
-  certbot/certbot renew --quiet && docker compose -f $(pwd)/docker-compose.prod.yml exec nginx nginx -s reload
-```
-
-4. **Stop Services**
-```bash
-docker compose -f docker-compose.prod.yml down
-# or
-make prod-down
-```
-
-## 🎯 Quick Commands
-
-**Development:**
-- `make dev` - Start development environment
-- `make dev-down` - Stop development environment  
-- `make logs-dev` - View development logs
-
-**Production:**
-- `make prod` - Start production environment
-- `make prod-down` - Stop production environment
-- `make logs-prod` - View production logs
-
-**Utility:**
-- `make clean` - Remove all containers and volumes
-- `make help` - Show available commands
-
-## 📋 What's Included
-
-- **FastAPI Backend** - RESTful API with Google OAuth authentication
-- **React TypeScript Frontend** - Modern web interface built with Vite
-- **PostgreSQL Database** - User management and log storage
-- **Apache Kafka** - Real-time log streaming and processing
-- **ChromaDB** - Vector database for AI-powered insights
-- **JWT Authentication** - Secure token-based authentication system
-
-## 🌐 Live Demo
-
-A live site available at: https://fakhrulsojib.mooo.com
+## 🚫 Constraints (AI Rules)
+- Do NOT assume the SSL environment uses the same compose file. Production uses specific `nginx` routes and `docker-compose.yml`.
+- Do NOT suggest modifying the `dev.sh` and `prod.sh` wrapper scripts lightly; rely on `.env` variable overrides instead.

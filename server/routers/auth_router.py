@@ -34,18 +34,18 @@ async def google_oauth_callback(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Authorization code is required"
             )
-        
+
         auth_response = await AuthService.authenticate_with_authorization_code(
             authorization_code=code,
             redirect_uri=f"{str(request.base_url).rstrip('/')}/auth/google/callback"
         )
-        
+
         response = RedirectResponse(url=f"{FRONTEND_URL}?auth=success")
-        
+
         cookie_kwargs = {}
         if COOKIE_DOMAIN:
             cookie_kwargs["domain"] = COOKIE_DOMAIN
-            
+
         response.set_cookie(
             key="access_token",
             value=auth_response.access_token,
@@ -66,12 +66,12 @@ async def google_oauth_callback(
             path="/auth/refresh",
             **cookie_kwargs
         )
-        
+
         logger.info("OAuth callback successful, cookies set, redirecting to frontend")
         return response
-            
+
     except Exception as e:
-        logger.error(f"OAuth callback failed: {str(e)}")
+        logger.error(f"OAuth callback failed: {str(e)}", exc_info=True)
         frontend_redirect = state if state else FRONTEND_URL
         return RedirectResponse(url=f"{frontend_redirect}?error=auth_failed")
 
@@ -84,18 +84,18 @@ async def refresh_token(request: Request):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="No refresh token found in cookies"
             )
-        
-        new_tokens = AuthService.refresh_access_token(refresh_token)
-        
+
+        new_tokens = await AuthService.refresh_access_token(refresh_token)
+
         response_obj = Response(
-            content='{"message": "Token refreshed successfully"}', 
+            content='{"message": "Token refreshed successfully"}',
             media_type="application/json"
         )
-        
+
         cookie_kwargs = {}
         if COOKIE_DOMAIN:
             cookie_kwargs["domain"] = COOKIE_DOMAIN
-            
+
         response_obj.set_cookie(
             key="access_token",
             value=new_tokens["access_token"],
@@ -106,12 +106,13 @@ async def refresh_token(request: Request):
             path="/",
             **cookie_kwargs
         )
-        
+
         return response_obj
-        
+
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("Token refresh failed", error=str(e), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Token refresh failed"
@@ -119,32 +120,32 @@ async def refresh_token(request: Request):
 
 @auth_router.post("/logout")
 async def logout(request: Request):
+    cookie_kwargs = {}
+    if COOKIE_DOMAIN:
+        cookie_kwargs["domain"] = COOKIE_DOMAIN
+
     try:
         refresh_token = request.cookies.get("refresh_token")
-        
+
         if refresh_token:
             try:
-                result = AuthService.logout(refresh_token)
+                result = await AuthService.logout(refresh_token)
             except Exception:
                 pass
-        
+
         response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
-        
-        cookie_kwargs = {}
-        if COOKIE_DOMAIN:
-            cookie_kwargs["domain"] = COOKIE_DOMAIN
-            
+
         response_obj.delete_cookie("access_token", path="/", **cookie_kwargs)
         response_obj.delete_cookie("refresh_token", path="/auth/refresh", **cookie_kwargs)
-        
+
         return response_obj
-    
+
     except Exception as e:
         response_obj = Response(content='{"message": "Successfully logged out"}', media_type="application/json")
-        
+
         response_obj.delete_cookie("access_token", path="/", **cookie_kwargs)
         response_obj.delete_cookie("refresh_token", path="/auth/refresh", **cookie_kwargs)
-        
+
         return response_obj
 
 @auth_router.get("/me", response_model=UserResponse)
@@ -155,27 +156,27 @@ async def get_current_user_info(request: Request):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No access token found in cookies"
         )
-    
+
     try:
         from util.jwt_utils import JWTUtils
         payload = JWTUtils.verify_token(access_token, "access")
         user_id = payload.get("sub")
-        
+
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token"
             )
-        
+
         from database.UserCrud import UserCRUD
-        user = UserCRUD.get_user_by_id(int(user_id))
-        
+        user = await UserCRUD.get_user_by_id(int(user_id))
+
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found"
             )
-        
+
         return UserResponse(
             id=user["id"],
             email=user["email"],
@@ -194,4 +195,4 @@ async def get_current_user_info(request: Request):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid access token"
-        ) 
+        )

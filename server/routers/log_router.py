@@ -33,35 +33,35 @@ def delivery_report(err, msg):
 async def add_single_log(log: RawLog):
     try:
         cached_data = api_key_cache_service.get_api_key_cache(log.api_key)
-        
+
         if cached_data:
             source_id = cached_data["source_id"]
             is_active = cached_data["active"]
         else:
-            log_source = LogSourceService.get_log_source_by_api_key(log.api_key)
+            log_source = await LogSourceService.get_log_source_by_api_key(log.api_key)
             if not log_source:
                 raise HTTPException(
                     status_code=401,
                     detail="Invalid API key"
                 )
-            
+
             source_id = log_source.id
             is_active = log_source.status == LogSourceStatus.ACTIVE
-            
+
             api_key_cache_service.set_api_key_cache(log.api_key, source_id, is_active)
-        
+
         if not is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Log source is not active"
             )
-        
+
         logger.info("Processing log entry", log_data=log.model_dump(), source_id=source_id)
-        
+
         log_json = log.model_dump_json(exclude={'api_key'})
         log_data = json.loads(log_json)
         log_data['source_id'] = source_id
-        
+
         message_bytes = json.dumps(log_data).encode('utf-8')
 
         if len(message_bytes) > MAX_KAFKA_PAYLOAD:
@@ -79,5 +79,5 @@ async def add_single_log(log: RawLog):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("Error adding log to Kafka", error=str(e))
+        logger.error("Error adding log to Kafka", error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

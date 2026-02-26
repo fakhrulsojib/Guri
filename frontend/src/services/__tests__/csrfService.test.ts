@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { csrfService } from '../csrfService'
 
 describe('CSRFService', () => {
@@ -6,17 +7,17 @@ describe('CSRFService', () => {
   })
 
   it('should fetch token on first call', async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
+    const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       headers: {
-        get: jest.fn().mockReturnValue('test-token')
+        get: vi.fn().mockReturnValue('test-token')
       }
     })
-    
+
     global.fetch = mockFetch
-    
+
     const token = await csrfService.getToken()
-    
+
     expect(token).toBe('test-token')
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/health'),
@@ -25,37 +26,37 @@ describe('CSRFService', () => {
   })
 
   it('should reuse token on subsequent calls', async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
+    const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       headers: {
-        get: jest.fn().mockReturnValue('test-token')
+        get: vi.fn().mockReturnValue('test-token')
       }
     })
-    
+
     global.fetch = mockFetch
-    
+
     await csrfService.getToken()
     await csrfService.getToken()
-    
+
     expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 
   it('should handle CSRF errors', async () => {
-    const mockFetch = jest.fn()
+    const mockFetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
-        headers: { get: jest.fn().mockReturnValue('test-token') }
+        headers: { get: vi.fn().mockReturnValue('test-token') }
       })
       .mockResolvedValueOnce({
         ok: true,
-        headers: { get: jest.fn().mockReturnValue('new-token') }
+        headers: { get: vi.fn().mockReturnValue('new-token') }
       })
-    
+
     global.fetch = mockFetch
-    
+
     await csrfService.getToken()
     await csrfService.handleCSRFError()
-    
+
     expect(mockFetch).toHaveBeenCalledTimes(2)
   })
-}) 
+})
