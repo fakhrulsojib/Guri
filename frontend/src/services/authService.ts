@@ -30,7 +30,7 @@ export const authService = {
     const clientId = GOOGLE_CLIENT_ID
     const redirectUri = `${VITE_BACKEND_URL}/auth/google/callback`
     const scope = 'email profile openid'
-    
+
     return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(window.location.origin)}`
   },
 
@@ -44,7 +44,7 @@ export const authService = {
         const response = await fetch(`/auth/me`, {
           credentials: 'include'
         })
-        
+
         if (!response.ok) {
           if (response.status === 401) {
             throw new Error('Unauthorized')
@@ -75,7 +75,7 @@ export const authService = {
         headers,
         credentials: 'include'
       })
-      
+
       if (!response.ok) {
         if (response.status === 403) {
           await csrfService.handleCSRFError()
@@ -94,7 +94,7 @@ export const authService = {
       }
       return response.json()
     } catch (error) {
-      if (error.message === 'Failed to fetch CSRF token') {
+      if (error instanceof Error && error.message === 'Failed to fetch CSRF token') {
         const response = await fetch(`/auth/logout`, {
           method: 'POST',
           credentials: 'include'
@@ -120,7 +120,7 @@ export const authService = {
         headers,
         credentials: 'include'
       })
-      
+
       if (!response.ok) {
         throw new Error('Token refresh failed')
       }

@@ -80,14 +80,17 @@ startup(){
   echo "EXECUTING: docker compose up -d --remove-orphans"
   docker compose up -d --remove-orphans
 
-  echo "EXECUTING: docker compose logs -f"
-  docker compose logs -f
+  echo ""
+  echo "✅ All services started in background."
+  echo ""
+  echo "📋 Useful commands:"
+  echo "   View all logs:        docker compose logs -f"
+  echo "   View backend logs:    docker compose logs -f backend"
+  echo "   View nginx logs:      docker compose logs -f nginx"
+  echo "   View kafka logs:      docker compose logs -f kafka"
+  echo "   Check status:         docker compose ps"
+  echo "   Stop all services:    docker compose down"
+  echo ""
 }
 
-cleanup(){
-  echo "EXECUTING: docker compose down"
-  docker compose down
-}
-
-trap cleanup INT TERM
 startup

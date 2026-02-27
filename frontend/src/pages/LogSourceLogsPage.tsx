@@ -355,7 +355,7 @@ const LogSourceLogsPage: React.FC<LogSourceLogsPageProps> = ({ isDark }) => {
       minute: '2-digit',
       second: '2-digit',
       fractionalSecondDigits: 3
-    })
+    } as Intl.DateTimeFormatOptions)
   }
 
   const getConnectionStatusColor = () => {

@@ -21,7 +21,7 @@ export const useCSRF = () => {
   const refreshToken = async () => {
     try {
       setError(null)
-      await csrfService.refreshToken()
+      await csrfService.handleCSRFError()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refresh CSRF token')
     }

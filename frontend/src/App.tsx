@@ -68,7 +68,7 @@ function App() {
           isAuthenticated ? (
             <DashboardLayout 
               isDark={isDark}
-              user={user}
+              user={user!}
               handleLogout={handleLogout}
             >
               <DashboardPage isDark={isDark} />
@@ -83,7 +83,7 @@ function App() {
           isAuthenticated ? (
             <DashboardLayout 
               isDark={isDark}
-              user={user}
+              user={user!}
               handleLogout={handleLogout}
             >
               <div className="p-6">
@@ -105,7 +105,7 @@ function App() {
           isAuthenticated ? (
             <DashboardLayout 
               isDark={isDark}
-              user={user}
+              user={user!}
               handleLogout={handleLogout}
             >
               <LogSourceDetailPage isDark={isDark} />
@@ -120,7 +120,7 @@ function App() {
           isAuthenticated ? (
             <DashboardLayout 
               isDark={isDark}
-              user={user}
+              user={user!}
               handleLogout={handleLogout}
             >
               <LogSourceLogsPage isDark={isDark} />
@@ -135,7 +135,7 @@ function App() {
           isAuthenticated ? (
             <DashboardLayout 
               isDark={isDark}
-              user={user}
+              user={user!}
               handleLogout={handleLogout}
             >
               <div className="p-6">
