@@ -68,16 +68,16 @@ services:
         kafka:
                 image: confluentinc/cp-kafka:7.5.3
                 container_name: kafka
-                ports:
-                        - "9092:9092"
+                expose:
+                        - "9093"
                 depends_on:
                         - zookeeper
                 environment:
                         KAFKA_BROKER_ID: 1
                         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-                        KAFKA_LISTENERS: PLAINTEXT://:9092,BROKER://:9093
-                        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://fakhrulsojib.mooo.com:9092,BROKER://kafka:9093
-                        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,BROKER:PLAINTEXT
+                        KAFKA_LISTENERS: BROKER://:9093
+                        KAFKA_ADVERTISED_LISTENERS: BROKER://kafka:9093
+                        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:PLAINTEXT
                         KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
                         KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
                         KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
@@ -140,12 +140,12 @@ services:
                 container_name: redis_cache
                 volumes:
                         - redis_data:/data
-                command: redis-server --appendonly yes
+                command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD}"
                 networks:
                         - app_network
                 restart: unless-stopped
                 healthcheck:
-                        test: [ "CMD", "redis-cli", "ping" ]
+                        test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
                         interval: 10s
                         timeout: 5s
                         retries: 5
